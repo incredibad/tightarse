@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from database import init_db, SessionLocal, Setting
 from routers import items, products, journey, settings, stores
+from routers import auth as auth_router
 import scheduler as sched
 
 logging.basicConfig(level=logging.INFO)
@@ -44,6 +45,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_router.router)
 app.include_router(items.router)
 app.include_router(products.router)
 app.include_router(journey.router)

@@ -10,6 +10,12 @@ class ScrapeResult:
     price: Optional[float]
     in_stock: bool
     store_name: str
+    on_special: bool = False
+    was_price: Optional[float] = None
+    cup_price: Optional[float] = None
+    cup_label: Optional[str] = None
+    package_size: Optional[str] = None
+    image_url: Optional[str] = None
 
 
 class BaseScraper(ABC):

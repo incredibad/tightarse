@@ -1,15 +1,17 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, ChevronRight, Tag, MapPin, Loader2, Trash2 } from "lucide-react";
+import { Plus, ChevronRight, Loader2, RefreshCw } from "lucide-react";
 import { api } from "../api";
+import StorePill from "../components/StorePill";
+import { normalizeCupPrice, formatCupPrice } from "../utils";
 
 export default function ShoppingList() {
   const [items, setItems] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [rescraping, setRescraping] = useState(false);
   const [newName, setNewName] = useState("");
-  const [newCategory, setNewCategory] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -28,17 +30,27 @@ export default function ShoppingList() {
   }
 
   function cheapestForItem(itemId) {
-    const ps = products.filter((p) => p.item_id === itemId && p.current_price != null);
+    const comparable = (p) => (p.cup_price != null ? normalizeCupPrice(p.cup_price, p.cup_label) : null) ?? p.current_price;
+    const ps = products.filter((p) => p.item_id === itemId && p.active && p.in_stock !== false && comparable(p) != null);
     if (!ps.length) return null;
-    return ps.reduce((a, b) => (a.current_price < b.current_price ? a : b));
+    return ps.reduce((a, b) => (comparable(a) < comparable(b) ? a : b));
+  }
+
+  async function handleRescrapeAll() {
+    setRescraping(true);
+    try {
+      await api.rescrapeAll();
+      await loadData();
+    } finally {
+      setRescraping(false);
+    }
   }
 
   async function handleAddItem(e) {
     e.preventDefault();
     if (!newName.trim()) return;
-    const item = await api.createItem({ name: newName.trim(), category: newCategory.trim() || null });
+    const item = await api.createItem({ name: newName.trim() });
     setNewName("");
-    setNewCategory("");
     setShowAddForm(false);
     navigate(`/items/${item.id}/add-product`);
   }
@@ -62,35 +74,39 @@ export default function ShoppingList() {
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold">Shopping List</h1>
-        <button
-          onClick={() => setShowAddForm(true)}
-          className="flex items-center gap-1 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
-        >
-          <Plus size={16} /> Add item
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleRescrapeAll}
+            disabled={rescraping}
+            className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 disabled:opacity-50 transition-colors"
+            title="Refresh all prices"
+          >
+            <RefreshCw size={18} className={rescraping ? "animate-spin" : ""} />
+          </button>
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="flex items-center gap-1 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
+          >
+            <Plus size={16} /> Add item
+          </button>
+        </div>
       </div>
 
       {showAddForm && (
-        <form onSubmit={handleAddItem} className="bg-white border border-gray-200 rounded-xl p-4 space-y-3 shadow-sm">
-          <h2 className="font-semibold text-gray-800">New item</h2>
+        <form onSubmit={handleAddItem} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-3 shadow-sm">
+          <h2 className="font-semibold text-gray-800 dark:text-gray-200">New item</h2>
           <input
             autoFocus
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="Item name (e.g. Oat milk)"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
           />
-          <input
-            value={newCategory}
-            onChange={(e) => setNewCategory(e.target.value)}
-            placeholder="Category (optional)"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-          />
-          <div className="flex gap-2">
+<div className="flex gap-2">
             <button type="submit" className="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-medium py-2 rounded-lg text-sm transition-colors">
               Create & add products
             </button>
-            <button type="button" onClick={() => setShowAddForm(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition-colors">
+            <button type="button" onClick={() => setShowAddForm(false)} className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors">
               Cancel
             </button>
           </div>
@@ -98,7 +114,7 @@ export default function ShoppingList() {
       )}
 
       {items.length === 0 && !showAddForm ? (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16 text-gray-400 dark:text-gray-500">
           <ShoppingCartIcon className="mx-auto mb-3 opacity-30" size={48} />
           <p className="text-sm">No items yet. Add something to track.</p>
         </div>
@@ -106,41 +122,41 @@ export default function ShoppingList() {
         <ul className="space-y-2">
           {items.map((item) => {
             const cheapest = cheapestForItem(item.id);
-            const productCount = products.filter((p) => p.item_id === item.id).length;
+            const itemProducts = products.filter((p) => p.item_id === item.id);
+            const productCount = itemProducts.length;
+            const allOos = productCount > 0 && itemProducts.every((p) => p.in_stock === false);
             return (
               <li
                 key={item.id}
                 onClick={() => navigate(`/items/${item.id}`)}
-                className="bg-white border border-gray-200 rounded-xl px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition-colors shadow-sm"
+                className={`bg-white dark:bg-gray-800 border rounded-xl px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm ${
+                  allOos ? "border-red-400" : "border-gray-200 dark:border-gray-700"
+                }`}
               >
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 truncate">{item.name}</p>
+                  <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{item.name}</p>
                   <div className="flex items-center gap-3 mt-0.5">
-                    {item.category && (
-                      <span className="flex items-center gap-1 text-xs text-gray-400">
-                        <Tag size={11} /> {item.category}
-                      </span>
-                    )}
-                    <span className="text-xs text-gray-400">{productCount} product{productCount !== 1 ? "s" : ""}</span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">{productCount} product{productCount !== 1 ? "s" : ""}</span>
                   </div>
                 </div>
-                {cheapest ? (
+                {allOos ? (
+                  <p className="font-bold text-red-500 shrink-0">N/A</p>
+                ) : cheapest ? (
                   <div className="text-right shrink-0">
-                    <p className="font-bold text-brand-600">${cheapest.current_price.toFixed(2)}</p>
-                    <p className="text-xs text-gray-400 flex items-center gap-1 justify-end">
-                      <MapPin size={11} /> {cheapest.store_name}
-                    </p>
+                    <div className="flex items-center justify-end gap-1.5">
+                      <StorePill name={cheapest.store_name} />
+                      {cheapest.current_price != null && (
+                        <p className="font-bold text-brand-600">${cheapest.current_price.toFixed(2)}</p>
+                      )}
+                    </div>
+                    {cheapest.cup_price != null && cheapest.cup_label && (
+                      <p className="text-xs text-gray-400 dark:text-gray-500">{formatCupPrice(cheapest.cup_price, cheapest.cup_label)}</p>
+                    )}
                   </div>
                 ) : (
-                  <span className="text-xs text-gray-400 shrink-0">No price yet</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">No price yet</span>
                 )}
-                <button
-                  onClick={(e) => handleDeleteItem(e, item.id)}
-                  className="text-gray-300 hover:text-red-400 transition-colors shrink-0"
-                >
-                  <Trash2 size={15} />
-                </button>
-                <ChevronRight size={16} className="text-gray-300 shrink-0" />
+                <ChevronRight size={16} className="text-gray-300 dark:text-gray-600 shrink-0" />
               </li>
             );
           })}
