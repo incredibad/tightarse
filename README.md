@@ -30,7 +30,7 @@ A self-hosted grocery price tracker and shopping assistant. Add items to your li
 - **Cup price (unit price)** — Shows price per 100g, per 100ml, per 100 sheets, etc. for easy comparison; inferred from the product name when the store doesn't provide one
 - **Price history** — Full chart and table of every recorded price per product, accessible from the product ⋮ menu
 - **Out of stock tracking** — Products are marked out of stock when no longer available; the item's cheapest in-stock alternative is used instead
-- **Scheduled scraping** — Prices are automatically refreshed on a configurable interval (set in hours)
+- **Scheduled scraping** — Prices are automatically refreshed on a configurable schedule: every 6h, 12h, daily at a set time, every 2 days, or weekly on a chosen day
 - **Per-user lists** — Each user has their own independent shopping list
 
 ### Journey
@@ -156,6 +156,7 @@ No environment variables are required for basic operation. The JWT secret is aut
 | Path in volume | Contents |
 |---|---|
 | `tightarse.db` | SQLite database (items, products, prices, settings, users) |
+| `tightarse.log` | Application log (current day); rotated daily, 7 days retained |
 
 All data lives inside the `tightarse_data` volume and survives updates.
 
