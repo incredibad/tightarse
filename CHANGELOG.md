@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented here.
 
+## [0.5.0] - 2026-06-23
+### Added
+- Scrape run history persisted to DB — survives container restarts; shown in a "Show all" modal with per-run ok/failed counts
+- Persistent log file at `/data/tightarse.log` with 7-day rotation — logs survive restarts and rebuilds
+- Log level filter buttons (ALL / INFO / WARN / ERROR) in the Logs section
+- Shopping list filter input — type to narrow items in real time
+- OOS and inactive products now sink to the bottom of the item product list (sorted: cheapest in-stock → OOS → disabled)
+- 404 responses mark the product out of stock immediately rather than leaving its last-known state
+
+### Changed
+- Scrape stats (last run time, ok/failed counts) now read from DB instead of in-memory — no more "No scrape run yet" after a restart
+- Failed scrapes log at WARN; application errors (DB, notifications) log at ERROR
+- Product names included in all scrape log messages so failures can be identified without looking up the ID
+- Reduced padding across ShoppingList, ItemDetail, and Journey views for better density
+- Logs section matches the card styling of other settings sections
+
 ## [0.4.0] - 2026-06-23
 ### Changed
 - Scrape schedule is now configured as a type rather than a raw hour count:
