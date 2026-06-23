@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented here.
 
+## [0.3.7] - 2026-06-23
+### Fixed
+- `test_email` ran blocking `smtplib` calls on the async event loop, freezing all requests for up to 10 seconds — moved to a thread executor
+- DB sessions were held open during HTTP scrape calls in `preview_url` and `search_store` — now closed before the network call
+- `rescrape_item` and `rescrape_all` double-closed the FastAPI-managed DB session — now manage their own sessions
+
 ## [0.3.6] - 2026-06-23
 ### Fixed
 - Scheduled scrape now runs up to 6 URLs concurrently (semaphore-limited) instead of sequentially — hundreds of products no longer take hours per cycle

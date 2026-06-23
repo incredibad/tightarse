@@ -1,3 +1,4 @@
+import asyncio
 import smtplib
 from email.mime.text import MIMEText
 
@@ -102,7 +103,7 @@ class TestEmailPayload(BaseModel):
 
 
 @router.post("/test-email", status_code=204)
-def test_email(
+async def test_email(
     payload: TestEmailPayload,
     _admin: User = Depends(require_admin),
     db: Session = Depends(get_db),
@@ -159,11 +160,14 @@ def test_email(
     msg["From"] = from_addr
     msg["To"] = payload.to
 
-    try:
+    def _send():
         with smtplib.SMTP(host, port, timeout=10) as smtp:
             smtp.starttls()
             smtp.login(smtp_user, password)
             smtp.sendmail(smtp_user, [payload.to], msg.as_string())
+
+    try:
+        await asyncio.get_event_loop().run_in_executor(None, _send)
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"SMTP error: {e}")
 

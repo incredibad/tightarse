@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from urllib.parse import urlparse
-from database import get_db, Product, Store, PriceHistory, Item, get_user_setting, get_global_setting
+from database import get_db, SessionLocal, Product, Store, PriceHistory, Item, get_user_setting, get_global_setting
 from auth import require_auth, require_admin, User
 from scrapers import get_scraper
 import scheduler as sched
@@ -136,6 +136,10 @@ async def preview_url(payload: dict, _user: User = Depends(require_auth), db: Se
         scraper = get_scraper(store.scraper_module, **_scraper_kwargs(db, _user.id, store))
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
+
+    # Close DB session before the (potentially slow) network call.
+    db.close()
+
     try:
         result = await scraper.scrape_url(url)
     except Exception as e:
@@ -172,6 +176,9 @@ async def search_store(payload: dict, current_user: User = Depends(require_auth)
         scraper = get_scraper(store.scraper_module, **_scraper_kwargs(db, current_user.id, store))
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
+
+    db.close()
+
     try:
         results = await scraper.search(query)
     except Exception as e:
@@ -223,22 +230,27 @@ async def create_product(
 
 
 @router.post("/rescrape/item/{item_id}", status_code=200)
-async def rescrape_item(item_id: int, current_user: User = Depends(require_auth), db: Session = Depends(get_db)):
-    item = db.query(Item).filter(Item.id == item_id, Item.user_id == current_user.id).first()
-    if not item:
-        raise HTTPException(status_code=404, detail="Item not found")
-    ps = db.query(Product).filter(Product.item_id == item_id, Product.active == True).all()
-    ids = [p.id for p in ps]
-    db.close()
+async def rescrape_item(item_id: int, current_user: User = Depends(require_auth)):
+    db = SessionLocal()
+    try:
+        item = db.query(Item).filter(Item.id == item_id, Item.user_id == current_user.id).first()
+        if not item:
+            raise HTTPException(status_code=404, detail="Item not found")
+        ids = [p.id for p in db.query(Product).filter(Product.item_id == item_id, Product.active == True).all()]
+    finally:
+        db.close()
     if ids:
         await asyncio.gather(*[_scrape_limited(pid) for pid in ids])
     return {"scraped": len(ids)}
 
 
 @router.post("/rescrape/all", status_code=200)
-async def rescrape_all(_admin: User = Depends(require_admin), db: Session = Depends(get_db)):
-    ids = [p.id for p in db.query(Product).filter(Product.active == True).all()]
-    db.close()
+async def rescrape_all(_admin: User = Depends(require_admin)):
+    db = SessionLocal()
+    try:
+        ids = [p.id for p in db.query(Product).filter(Product.active == True).all()]
+    finally:
+        db.close()
     if ids:
         await asyncio.gather(*[_scrape_limited(pid) for pid in ids])
     return {"scraped": len(ids)}
