@@ -8,6 +8,7 @@ import ShoppingList from "./pages/ShoppingList";
 import ItemDetail from "./pages/ItemDetail";
 import AddProduct from "./pages/AddProduct";
 import Journey from "./pages/Journey";
+import ProductHistory from "./pages/ProductHistory";
 import Checklist from "./pages/Checklist";
 import SettingsPage from "./pages/Settings";
 
@@ -162,6 +163,7 @@ export default function App() {
             <Route path="/checklist" element={<Checklist />} />
             <Route path="/items/:itemId" element={<ItemDetail />} />
             <Route path="/items/:itemId/add-product" element={<AddProduct />} />
+            <Route path="/items/:itemId/products/:productId/history" element={<ProductHistory />} />
             <Route path="/journey" element={<Journey />} />
             <Route path="/settings" element={<SettingsPage onLogout={handleLogout} user={user} />} />
           </Routes>

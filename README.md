@@ -28,8 +28,9 @@ A self-hosted grocery price tracker and shopping assistant. Add items to your li
 - **Paste a URL to add a product** — Supports direct product URLs or in-store search for supported stores
 - **Special / sale detection** — Highlights on-special prices and shows the previous was-price
 - **Cup price (unit price)** — Shows price per 100g, per litre, etc. for easy comparison
+- **Price history** — Full chart and table of every recorded price per product, accessible from the product ⋮ menu
 - **Out of stock tracking** — Products are marked out of stock when no longer available; the item's cheapest in-stock alternative is used instead
-- **Scheduled scraping** — Prices are automatically refreshed on a configurable interval (1h to weekly)
+- **Scheduled scraping** — Prices are automatically refreshed on a configurable interval (set in hours)
 - **Per-user lists** — Each user has their own independent shopping list
 
 ### Journey
@@ -51,15 +52,14 @@ A self-hosted grocery price tracker and shopping assistant. Add items to your li
 - **Drakes store selector** — Pick which Drakes location to use
 
 ### Notifications
-- **Price drop alerts** — Get notified when a tracked product drops below a threshold
-- **Back-in-stock alerts** — Get notified when an out-of-stock product comes back
+- **Price drop alerts** — Get notified when a tracked product drops in price by a configurable percentage
 - **Channels** — Gotify, Discord webhook, or email (SMTP)
 
 ### System
 - **Multi-user** — Invite additional users; the first account created becomes admin
 - **Admin controls** — Manage users, stores, scrape interval, notification settings, and VPN proxy from Settings
 - **VPN proxy support** — Route Amazon (or all) scraping through a gluetun HTTP proxy to protect your home IP
-- **Dark mode** — Follows system preference
+- **Dark mode** — Defaults to dark, toggleable in Settings
 - **Mobile-first** — Designed for use on your phone while you're in the supermarket
 
 ---
