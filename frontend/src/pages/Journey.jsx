@@ -111,12 +111,14 @@ export default function Journey() {
 
       {/* Checklist accordion */}
       {showChecklist && checklist.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden border-l-4 border-l-gray-400 dark:border-l-gray-500">
           <button
             onClick={() => setChecklistCollapsed((p) => !p)}
             className="w-full flex items-center justify-between px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 active:opacity-70 transition-opacity"
           >
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Checklist</span>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center justify-center rounded text-xs font-bold leading-none shrink-0 px-1.5 py-0.5 bg-gray-500 text-white">My Checklist</span>
+            </div>
             <div className="flex items-center gap-2">
               {!checklistCollapsed && checklist.some((i) => i.checked) && (
                 <span className="text-xs text-gray-400">{checklist.filter((i) => !i.checked).length} left</span>
