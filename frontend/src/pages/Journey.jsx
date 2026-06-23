@@ -180,17 +180,17 @@ export default function Journey() {
                         <p className={`text-xs truncate ${isChecked ? "text-gray-300 dark:text-gray-600" : "text-gray-400"}`} title={cp.product_name}>{cp.product_name}</p>
                       </div>
                       {/* Cup price */}
-                      <div className="w-[22%] px-1 py-2 shrink-0">
+                      <div className={`w-[22%] px-1 py-2 shrink-0 ${isChecked ? "opacity-40" : ""}`}>
                         <CupPrice price={cp.cup_price} label={cp.cup_label} />
                       </div>
                       {/* Was price */}
-                      <div className="w-[11%] px-1 py-2 text-right shrink-0">
+                      <div className={`w-[11%] px-1 py-2 text-right shrink-0 ${isChecked ? "opacity-40" : ""}`}>
                         <p className="text-[10px] text-gray-400 line-through leading-tight">
                           {onSpecial && cp.was_price != null ? `$${cp.was_price.toFixed(2)}` : ""}
                         </p>
                       </div>
                       {/* Price */}
-                      <div className="w-[17%] px-2 py-2 text-right shrink-0">
+                      <div className={`w-[17%] px-2 py-2 text-right shrink-0 ${isChecked ? "opacity-40" : ""}`}>
                         <p className={`text-sm font-bold leading-tight ${onSpecial ? "text-red-500 dark:text-yellow-400" : "text-gray-900 dark:text-white"}`}>
                           ${cp.price.toFixed(2)}
                         </p>
