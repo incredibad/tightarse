@@ -11,9 +11,9 @@ A self-hosted grocery price tracker and shopping assistant. Add items to your li
 
 ## Screenshots
 
-<img src="https://img.timhedley.com/image/d031c68f-764b-4fe3-975f-36f726889ff8.png" width="100%" alt="Shopping list" />
-<img src="https://img.timhedley.com/image/909affd1-8969-4144-b1f2-fbb2c7227b3c.png" width="100%" alt="Journey view" />
-<img src="https://img.timhedley.com/image/0c775778-2702-48d3-9822-e5512ae17bfe.png" width="100%" alt="Checklist" />
+<img src="https://img.timhedley.com/image/d031c68f-764b-4fe3-975f-36f726889ff8.png" style="max-height:800px" alt="Shopping list" />
+<img src="https://img.timhedley.com/image/909affd1-8969-4144-b1f2-fbb2c7227b3c.png" style="max-height:800px" alt="Journey view" />
+<img src="https://img.timhedley.com/image/0c775778-2702-48d3-9822-e5512ae17bfe.png" style="max-height:800px" alt="Checklist" />
 
 ---
 
