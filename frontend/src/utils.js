@@ -24,6 +24,13 @@ export function normalizeCupPrice(price, label) {
     return price / (/^l/.test(vm[2]) && vm[2] !== "ml" ? qty * 1000 : qty);
   }
 
+  // Count-based units: sheets, ea, tabs, capsules, etc.
+  const cm = l.match(/per(\d+\.?\d*)(sheets?|ea|tabs?|capsules?|wipes?|serves?|servings?|units?)/);
+  if (cm) {
+    const qty = parseFloat(cm[1]) || 1;
+    return price / qty;
+  }
+
   return null;
 }
 
@@ -46,6 +53,15 @@ export function formatCupPrice(price, label) {
     const qty = parseFloat(vm[1]) || 1;
     const perMl = price / (/^l/.test(vm[2]) && vm[2] !== "ml" ? qty * 1000 : qty);
     return `$${(perMl * 100).toFixed(2)}/100ml`;
+  }
+
+  // Count-based units — normalise display to per 100 units
+  const cm = l.match(/per(\d+\.?\d*)(sheets?|ea|tabs?|capsules?|wipes?|serves?|servings?|units?)/);
+  if (cm) {
+    const qty = parseFloat(cm[1]) || 1;
+    const unitWord = cm[2].replace(/s$/, ""); // singular
+    const displayUnit = unitWord === "ea" ? "sheet" : unitWord;
+    return `$${(price / qty * 100).toFixed(2)}/100 ${displayUnit}s`;
   }
 
   return null;
