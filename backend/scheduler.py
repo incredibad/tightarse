@@ -47,7 +47,7 @@ async def _scrape_product_inner(product_id: int) -> bool:
         result = await scraper.scrape_url(url)
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 404:
-            logger.error(f"Product {product_id} returned 404 — marking out of stock")
+            logger.warning(f"Product {product_id} returned 404 — marking out of stock")
             db = SessionLocal()
             try:
                 product = db.query(Product).filter(Product.id == product_id).first()
@@ -58,10 +58,10 @@ async def _scrape_product_inner(product_id: int) -> bool:
             finally:
                 db.close()
         else:
-            logger.error(f"Scrape failed for product {product_id}: {e}")
+            logger.warning(f"Scrape failed for product {product_id}: {e}")
         return False
     except Exception as e:
-        logger.error(f"Scrape failed for product {product_id}: {e}")
+        logger.warning(f"Scrape failed for product {product_id}: {e}")
         return False
     finally:
         await scraper.close()
@@ -129,7 +129,7 @@ async def _scrape_url_group(url: str, product_ids: list[int]) -> tuple[int, int]
             result = await scraper.scrape_url(url)
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
-                logger.error(f"{url} returned 404 — marking {len(product_ids)} product(s) out of stock")
+                logger.warning(f"{url} returned 404 — marking {len(product_ids)} product(s) out of stock")
                 db = SessionLocal()
                 try:
                     now = datetime.utcnow()
@@ -142,10 +142,10 @@ async def _scrape_url_group(url: str, product_ids: list[int]) -> tuple[int, int]
                 finally:
                     db.close()
             else:
-                logger.error(f"Scrape failed for {url}: {e}")
+                logger.warning(f"Scrape failed for {url}: {e}")
             return 0, len(product_ids)
         except Exception as e:
-            logger.error(f"Scrape failed for {url}: {e}")
+            logger.warning(f"Scrape failed for {url}: {e}")
             return 0, len(product_ids)
         finally:
             await scraper.close()
