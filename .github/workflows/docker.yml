@@ -21,8 +21,8 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Docker metadata (backend)
-        id: meta-backend
+      - name: Docker metadata
+        id: meta
         uses: docker/metadata-action@v5
         with:
           images: incredibad/tightarse
@@ -31,32 +31,12 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
             type=raw,value=dev,enable=${{ github.ref == 'refs/heads/dev' }}
 
-      - name: Docker metadata (frontend)
-        id: meta-frontend
-        uses: docker/metadata-action@v5
-        with:
-          images: incredibad/tightarse-frontend
-          tags: |
-            type=semver,pattern={{version}}
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/dev' }}
-
-      - name: Build and push backend
+      - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
           file: Dockerfile
           push: true
-          tags: ${{ steps.meta-backend.outputs.tags }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and push frontend
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: Dockerfile.frontend
-          push: true
-          tags: ${{ steps.meta-frontend.outputs.tags }}
+          tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
