@@ -84,7 +84,7 @@ export default function Settings({ onLogout, user }) {
           rel="noopener noreferrer"
           className="text-xs text-gray-400 hover:text-brand-500 transition-colors font-mono"
         >
-          v0.3.8
+          v0.3.9
         </a>
       </div>
 
@@ -415,13 +415,27 @@ function AdminTab({ settings, set, save, saving, saveMsg }) {
   );
 }
 
+function timeAgo(isoStr) {
+  if (!isoStr) return null;
+  const diff = Math.floor((Date.now() - new Date(isoStr)) / 1000);
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
 function AdminGeneralTab({ settings, set, save, saving, saveMsg }) {
   const [scraping, setScraping] = useState(false);
   const [scrapeMsg, setScrapeMsg] = useState("");
+  const [scrapeStats, setScrapeStats] = useState(null);
   const [drakesScanResults, setDrakesScanResults] = useState(null);
   const [drakesScanLoading, setDrakesScanLoading] = useState(false);
   const [drakesScanMsg, setDrakesScanMsg] = useState("");
   const [drakesSaveMsg, setDrakesSaveMsg] = useState("");
+
+  useEffect(() => {
+    api.getScrapeStats().then(setScrapeStats).catch(() => {});
+  }, []);
 
   async function triggerScrape() {
     setScraping(true); setScrapeMsg("");
@@ -429,6 +443,7 @@ function AdminGeneralTab({ settings, set, save, saving, saveMsg }) {
       const r = await api.rescrapeAll();
       setScrapeMsg(`Scraped ${r.scraped} products`);
       setTimeout(() => setScrapeMsg(""), 3000);
+      api.getScrapeStats().then(setScrapeStats).catch(() => {});
     } catch (e) { setScrapeMsg(e.message); } finally { setScraping(false); }
   }
 
@@ -454,20 +469,31 @@ function AdminGeneralTab({ settings, set, save, saving, saveMsg }) {
   return (
     <div className="space-y-4">
       <Section title="Scraping">
-        <Field label="Check prices every (hours)">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">Check every</span>
           <input
             type="number" min="1" max="168"
             value={settings.scrape_interval_hours ?? "6"}
             onChange={(e) => set("scrape_interval_hours", e.target.value)}
-            className={inputCls}
+            className={`${inputCls} w-20`}
           />
-        </Field>
-        <SaveBar keys={["scrape_interval_hours"]} save={save} saving={saving} msg={saveMsg} />
-        <button onClick={triggerScrape} disabled={scraping} className={`mt-2 ${btnCls}`}>
-          {scraping ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-          Check all prices now
-        </button>
-        {scrapeMsg && <p className="text-xs text-brand-600 mt-1">{scrapeMsg}</p>}
+          <span className="text-sm text-gray-600 dark:text-gray-400">hours</span>
+          <SaveBar keys={["scrape_interval_hours"]} save={save} saving={saving} msg={saveMsg} />
+          <button onClick={triggerScrape} disabled={scraping} className={btnCls}>
+            {scraping ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+            Check all now
+          </button>
+          {scrapeMsg && <span className="text-xs text-brand-600">{scrapeMsg}</span>}
+        </div>
+        {scrapeStats && (
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+            Last scraped {timeAgo(scrapeStats.last_scraped_at) ?? "never"}
+            {scrapeStats.oldest_scraped_at && scrapeStats.last_scraped_at !== scrapeStats.oldest_scraped_at && (
+              <> · oldest {timeAgo(scrapeStats.oldest_scraped_at)}</>
+            )}
+            {" "}· {scrapeStats.total_active} active products
+          </p>
+        )}
       </Section>
 
       <Section title="Drakes Store Map">
