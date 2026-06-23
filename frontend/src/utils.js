@@ -60,7 +60,7 @@ export function formatCupPrice(price, label) {
   if (cm) {
     const qty = parseFloat(cm[1]) || 1;
     const unitWord = cm[2].replace(/s$/, ""); // singular
-    const displayUnit = unitWord === "ea" ? "sheet" : unitWord;
+    const displayUnit = unitWord === "ea" ? "unit" : unitWord;
     return `$${(price / qty * 100).toFixed(2)}/100 ${displayUnit}s`;
   }
 
