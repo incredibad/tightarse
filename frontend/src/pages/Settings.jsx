@@ -76,7 +76,17 @@ export default function Settings({ onLogout, user }) {
 
   return (
     <div className="p-4 space-y-4">
-      <h1 className="text-xl font-bold">Settings</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold">Settings</h1>
+        <a
+          href="https://github.com/incredibad/tightarse"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-gray-400 hover:text-brand-500 transition-colors font-mono"
+        >
+          v0.3.0
+        </a>
+      </div>
 
       <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
         {tabs.map((t) => (
