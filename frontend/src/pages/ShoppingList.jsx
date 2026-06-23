@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, ChevronRight, Loader2, RefreshCw } from "lucide-react";
+import { Plus, ChevronRight, Loader2, RefreshCw, Search, X } from "lucide-react";
 import { api } from "../api";
 import StorePill from "../components/StorePill";
 import { normalizeCupPrice, formatCupPrice } from "../utils";
@@ -12,6 +12,7 @@ export default function ShoppingList() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [rescraping, setRescraping] = useState(false);
   const [newName, setNewName] = useState("");
+  const [filter, setFilter] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -70,8 +71,12 @@ export default function ShoppingList() {
     );
   }
 
+  const filteredItems = filter.trim()
+    ? items.filter((item) => item.name.toLowerCase().includes(filter.toLowerCase()))
+    : items;
+
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-3 space-y-3">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold">Shopping List</h1>
         <div className="flex items-center gap-2">
@@ -91,6 +96,23 @@ export default function ShoppingList() {
           </button>
         </div>
       </div>
+
+      {items.length > 0 && (
+        <div className="relative">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <input
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            placeholder="Filter items…"
+            className="w-full pl-8 pr-8 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          />
+          {filter && (
+            <button onClick={() => setFilter("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              <X size={13} />
+            </button>
+          )}
+        </div>
+      )}
 
       {showAddForm && (
         <form onSubmit={handleAddItem} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-3 shadow-sm">
@@ -118,9 +140,11 @@ export default function ShoppingList() {
           <ShoppingCartIcon className="mx-auto mb-3 opacity-30" size={48} />
           <p className="text-sm">No items yet. Add something to track.</p>
         </div>
+      ) : filteredItems.length === 0 ? (
+        <p className="text-sm text-center text-gray-400 py-8">No items match "{filter}".</p>
       ) : (
-        <ul className="space-y-2">
-          {items.map((item) => {
+        <ul className="space-y-1.5">
+          {filteredItems.map((item) => {
             const cheapest = cheapestForItem(item.id);
             const itemProducts = products.filter((p) => p.item_id === item.id);
             const productCount = itemProducts.length;
@@ -129,7 +153,7 @@ export default function ShoppingList() {
               <li
                 key={item.id}
                 onClick={() => navigate(`/items/${item.id}`)}
-                className={`bg-white dark:bg-gray-800 border rounded-xl px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm ${
+                className={`bg-white dark:bg-gray-800 border rounded-xl px-3 py-2 flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm ${
                   allOos ? "border-red-400" : "border-gray-200 dark:border-gray-700"
                 }`}
               >
