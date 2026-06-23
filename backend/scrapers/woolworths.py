@@ -100,6 +100,9 @@ class WoolworthsScraper(BaseScraper):
 
         data = await self._get(f"{_PRODUCT_API}/{stockcode}")
         product = data.get("Product", {})
+        if product.get("IsMarketProduct"):
+            vendor = product.get("Vendor") or "a third-party seller"
+            raise ValueError(f"This product is sold by {vendor} via Woolworths Everyday Market, not directly by Woolworths. Add it from the seller's own site instead.")
         name = product.get("Name", "Unknown product")
         in_stock = not product.get("IsOutOfStock", False)
         package_size = (product.get("PackageSize") or "").strip() or None
@@ -157,7 +160,7 @@ class WoolworthsScraper(BaseScraper):
                 stockcode = p.get("Stockcode")
                 name = p.get("Name")
                 price = p.get("Price") or p.get("WasPrice")
-                if not stockcode or not name:
+                if not stockcode or not name or p.get("IsMarketProduct"):
                     continue
                 cup_price_raw = p.get("CupPrice")
                 cup_measure = (p.get("CupMeasure") or "").strip().lower()
