@@ -761,7 +761,7 @@ function AdminUsersTab() {
   }
 
   return (
-    <Section title="Users">
+    <Section title="Users" action={<button onClick={() => setAddOpen(true)} className={btnCls}><UserPlus size={14} /> Add user</button>}>
       {usersLoading ? (
         <Loader2 className="animate-spin text-brand-500 mx-auto" size={20} />
       ) : (
@@ -794,9 +794,6 @@ function AdminUsersTab() {
           </div>
         </form>
       )}
-      <button onClick={() => setAddOpen(true)} className={btnCls}>
-        <UserPlus size={14} /> Add user
-      </button>
       {addOpen && <AddUserModal onClose={() => setAddOpen(false)} onCreated={loadUsers} />}
     </Section>
   );
@@ -929,10 +926,13 @@ function TestEmailModal({ onClose }) {
 
 // ── Shared components ─────────────────────────────────────────────────────────
 
-function Section({ title, description, children }) {
+function Section({ title, description, action, children }) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
-      <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400">{title}</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400">{title}</h2>
+        {action}
+      </div>
       {description && <p className="text-xs text-gray-500 dark:text-gray-400">{description}</p>}
       {children}
     </div>
