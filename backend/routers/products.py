@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from pydantic import BaseModel
@@ -8,6 +9,12 @@ from database import get_db, Product, Store, PriceHistory, Item, get_user_settin
 from auth import require_auth, require_admin, User
 from scrapers import get_scraper
 import scheduler as sched
+
+_RESCRAPE_SEM = asyncio.Semaphore(4)  # max 4 concurrent scrapes from manual triggers
+
+async def _scrape_limited(product_id: int):
+    async with _RESCRAPE_SEM:
+        await sched.scrape_product(product_id)
 
 router = APIRouter(prefix="/products", tags=["products"])
 
@@ -219,23 +226,24 @@ async def create_product(
 
 @router.post("/rescrape/item/{item_id}", status_code=200)
 async def rescrape_item(item_id: int, current_user: User = Depends(require_auth), db: Session = Depends(get_db)):
-    import asyncio
     item = db.query(Item).filter(Item.id == item_id, Item.user_id == current_user.id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
     ps = db.query(Product).filter(Product.item_id == item_id, Product.active == True).all()
-    if ps:
-        await asyncio.gather(*[sched.scrape_product(p.id) for p in ps])
-    return {"scraped": len(ps)}
+    ids = [p.id for p in ps]
+    db.close()
+    if ids:
+        await asyncio.gather(*[_scrape_limited(pid) for pid in ids])
+    return {"scraped": len(ids)}
 
 
 @router.post("/rescrape/all", status_code=200)
 async def rescrape_all(_admin: User = Depends(require_admin), db: Session = Depends(get_db)):
-    import asyncio
-    ps = db.query(Product).filter(Product.active == True).all()
-    if ps:
-        await asyncio.gather(*[sched.scrape_product(p.id) for p in ps])
-    return {"scraped": len(ps)}
+    ids = [p.id for p in db.query(Product).filter(Product.active == True).all()]
+    db.close()
+    if ids:
+        await asyncio.gather(*[_scrape_limited(pid) for pid in ids])
+    return {"scraped": len(ids)}
 
 
 @router.delete("/{product_id}", status_code=204)
