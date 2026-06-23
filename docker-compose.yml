@@ -24,6 +24,7 @@ services:
       - tightarse_data:/data
     environment:
       - PYTHONUNBUFFERED=1
+      - TZ=Australia/Brisbane
     ports:
       - "7382:7382"
     healthcheck:
