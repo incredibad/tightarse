@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ChevronDown, ChevronUp, Loader2, ShoppingBag } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2, ShoppingBag, RotateCcw } from "lucide-react";
 import { api } from "../api";
 import StorePill from "../components/StorePill";
 import { Tooltip } from "../components/Tooltip";
@@ -24,17 +24,40 @@ export default function Journey() {
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState({});
   const [collapsedStores, setCollapsedStores] = useState({});
+  const [checklist, setChecklist] = useState([]);
+  const [checklistCollapsed, setChecklistCollapsed] = useState(false);
+  const [checkedItems, setCheckedItems] = useState(new Set());
 
   useEffect(() => {
     api.getJourney().then((data) => { setJourney(data); setLoading(false); });
+    api.getChecklist().then(setChecklist).catch(() => {});
   }, []);
 
-  function toggleAlternatives(itemId) {
+  function toggleAlternatives(e, itemId) {
+    e.stopPropagation();
     setExpanded((prev) => ({ ...prev, [itemId]: !prev[itemId] }));
   }
 
   function toggleStore(storeId) {
     setCollapsedStores((prev) => ({ ...prev, [storeId]: !prev[storeId] }));
+  }
+
+  function toggleShoppingItem(itemId) {
+    setCheckedItems((prev) => {
+      const next = new Set(prev);
+      next.has(itemId) ? next.delete(itemId) : next.add(itemId);
+      return next;
+    });
+  }
+
+  async function toggleChecklistItem(item) {
+    const checked = item.checked ? 0 : 1;
+    setChecklist((prev) => prev.map((i) => i.id === item.id ? { ...i, checked } : i));
+    await api.updateChecklistItem(item.id, { checked }).catch(() => {});
+  }
+
+  function resetJourney() {
+    setCheckedItems(new Set());
   }
 
   if (loading) {
@@ -58,6 +81,14 @@ export default function Journey() {
     <div className="p-3 space-y-3">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold">Shopping Journey</h1>
+        {checkedItems.size > 0 && (
+          <button
+            onClick={resetJourney}
+            className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+          >
+            <RotateCcw size={13} /> Reset
+          </button>
+        )}
       </div>
 
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2.5 shadow-sm flex justify-between items-center">
@@ -67,6 +98,40 @@ export default function Journey() {
         </div>
       </div>
 
+      {/* Checklist accordion */}
+      {checklist.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
+          <button
+            onClick={() => setChecklistCollapsed((p) => !p)}
+            className="w-full flex items-center justify-between px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 active:opacity-70 transition-opacity"
+          >
+            <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Checklist</span>
+            <div className="flex items-center gap-2">
+              {!checklistCollapsed && checklist.some((i) => i.checked) && (
+                <span className="text-xs text-gray-400">{checklist.filter((i) => !i.checked).length} left</span>
+              )}
+              {checklistCollapsed
+                ? <ChevronDown size={14} className="text-gray-400 shrink-0" />
+                : <ChevronUp size={14} className="text-gray-400 shrink-0" />}
+            </div>
+          </button>
+          {!checklistCollapsed && (
+            <ul className="divide-y divide-gray-100 dark:divide-gray-700">
+              {checklist.map((item) => (
+                <li
+                  key={item.id}
+                  onClick={() => toggleChecklistItem(item)}
+                  className={`px-3 py-2 cursor-pointer transition-opacity select-none ${item.checked ? "opacity-40" : ""}`}
+                >
+                  <p className={`text-sm text-gray-900 dark:text-white ${item.checked ? "line-through" : ""}`}>{item.name}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {/* Store accordions */}
       {journey.stores.map((store) => {
         const storeColor = STORE_COLORS[store.store_name]?.bg;
         const isCollapsed = collapsedStores[store.store_id];
@@ -93,23 +158,28 @@ export default function Journey() {
             {[...store.items].sort((a, b) => a.item_name.localeCompare(b.item_name)).map((item) => {
               const hasAlts = item.all_products.length > 1;
               const isOpen = expanded[item.item_id];
+              const isChecked = checkedItems.has(item.item_id);
               const onSpecial = item.cheapest_product.on_special;
               const cp = item.cheapest_product;
               return (
-                <li key={item.item_id} className="flex divide-x divide-gray-100 dark:divide-gray-700">
+                <li
+                  key={item.item_id}
+                  onClick={() => toggleShoppingItem(item.item_id)}
+                  className={`flex divide-x divide-gray-100 dark:divide-gray-700 cursor-pointer transition-opacity select-none ${isChecked ? "opacity-40" : ""}`}
+                >
                   {/* Main row */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center">
                       {/* Name — 50% */}
                       <div className="w-[50%] min-w-0 px-3 py-2">
                         <Tooltip content={item.item_name}>
-                          <p className="font-medium text-gray-900 dark:text-white text-sm truncate">{item.item_name}</p>
+                          <p className={`font-medium text-gray-900 dark:text-white text-sm truncate ${isChecked ? "line-through" : ""}`}>{item.item_name}</p>
                         </Tooltip>
                         <Tooltip content={cp.product_name}>
                           <p className="text-xs text-gray-400 truncate">{cp.product_name}</p>
                         </Tooltip>
                       </div>
-                      {/* Cup price — two lines */}
+                      {/* Cup price */}
                       <div className="w-[22%] px-1 py-2 shrink-0">
                         <CupPrice price={cp.cup_price} label={cp.cup_label} />
                       </div>
@@ -153,7 +223,7 @@ export default function Journey() {
                   {/* Full-height alts toggle */}
                   {hasAlts ? (
                     <button
-                      onClick={() => toggleAlternatives(item.item_id)}
+                      onClick={(e) => toggleAlternatives(e, item.item_id)}
                       className="flex flex-col items-center justify-center gap-0.5 w-10 shrink-0 bg-gray-50 dark:bg-white/[0.04] hover:bg-gray-100 dark:hover:bg-white/[0.08] text-gray-400 dark:text-gray-500 transition-colors"
                     >
                       <span className="text-[10px] font-semibold leading-none">{item.all_products.length - 1}</span>
