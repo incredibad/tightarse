@@ -424,10 +424,54 @@ function timeAgo(isoStr) {
   return `${Math.floor(diff / 86400)}d ago`;
 }
 
+function ScrapeHistoryModal({ onClose }) {
+  const [history, setHistory] = useState(null);
+  useEffect(() => { api.getScrapeHistory().then(setHistory).catch(() => setHistory([])); }, []);
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4" onClick={onClose}>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg p-5 space-y-4 max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-gray-900 dark:text-white">Scrape history</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><X size={18} /></button>
+        </div>
+        {history === null ? (
+          <Loader2 className="animate-spin text-brand-500 mx-auto" size={20} />
+        ) : history.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-4">No scrape runs recorded yet.</p>
+        ) : (
+          <div className="overflow-y-auto">
+            <table className="w-full text-xs">
+              <thead className="sticky top-0 bg-white dark:bg-gray-800">
+                <tr className="text-gray-500 dark:text-gray-400 text-left border-b border-gray-200 dark:border-gray-700">
+                  <th className="pb-2 font-medium">Time</th>
+                  <th className="pb-2 font-medium text-green-600 dark:text-green-400">OK</th>
+                  <th className="pb-2 font-medium text-red-500">Failed</th>
+                  <th className="pb-2 font-medium">Total</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                {history.map((r) => (
+                  <tr key={r.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                    <td className="py-1.5 pr-4 text-gray-500 dark:text-gray-400 whitespace-nowrap">{new Date(r.started_at).toLocaleString()}</td>
+                    <td className="py-1.5 pr-4 text-green-600 dark:text-green-400 font-medium">{r.success}</td>
+                    <td className="py-1.5 pr-4 font-medium">{r.failed > 0 ? <span className="text-red-500">{r.failed}</span> : <span className="text-gray-300 dark:text-gray-600">—</span>}</td>
+                    <td className="py-1.5 text-gray-600 dark:text-gray-300">{r.success + r.failed}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function AdminGeneralTab({ settings, set, save, saving, saveMsg }) {
   const [scraping, setScraping] = useState(false);
   const [scrapeMsg, setScrapeMsg] = useState("");
   const [scrapeStats, setScrapeStats] = useState(null);
+  const [scrapeHistoryOpen, setScrapeHistoryOpen] = useState(false);
   const [drakesScanResults, setDrakesScanResults] = useState(null);
   const [drakesScanLoading, setDrakesScanLoading] = useState(false);
   const [drakesScanMsg, setDrakesScanMsg] = useState("");
@@ -531,8 +575,11 @@ function AdminGeneralTab({ settings, set, save, saving, saveMsg }) {
             ) : (
               <>No scrape run yet · {scrapeStats.total_active} products</>
             )}
+            {" · "}
+            <button onClick={() => setScrapeHistoryOpen(true)} className="underline hover:text-gray-600 dark:hover:text-gray-300">Show all</button>
           </p>
         )}
+        {scrapeHistoryOpen && <ScrapeHistoryModal onClose={() => setScrapeHistoryOpen(false)} />}
       </Section>
 
       <Section title="Drakes Store Map" description="Scan the Drakes website to discover online stores and update the store dropdown. Only stores that respond successfully will be saved.">

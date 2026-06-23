@@ -161,6 +161,20 @@ class VpnCheckHistory(Base):
     checked_at = Column(DateTime, default=datetime.utcnow)
 
 
+class ScrapeRunHistory(Base):
+    __tablename__ = "scrape_run_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    started_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    success = Column(Integer, nullable=False, default=0)
+    failed = Column(Integer, nullable=False, default=0)
+
+
+def record_scrape_run(db, started_at, success: int, failed: int):
+    db.add(ScrapeRunHistory(started_at=started_at, success=success, failed=failed))
+    db.commit()
+
+
 def record_vpn_ip(db, ip: str, org=None, city=None, country=None) -> bool:
     """Insert a VPN check only when the exit IP differs from the most recent entry. Returns True if inserted."""
     last = db.query(VpnCheckHistory).order_by(VpnCheckHistory.checked_at.desc()).first()
@@ -225,6 +239,7 @@ def _migrate_db():
         "DROP TABLE IF EXISTS products_new",
         "CREATE TABLE IF NOT EXISTS checklist_items (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, name TEXT NOT NULL, checked INTEGER NOT NULL DEFAULT 0, position INTEGER NOT NULL DEFAULT 0, created_at TEXT)",
         "CREATE TABLE IF NOT EXISTS vpn_check_history (id INTEGER PRIMARY KEY AUTOINCREMENT, ip TEXT NOT NULL, org TEXT, city TEXT, country TEXT, checked_at TEXT)",
+        "CREATE TABLE IF NOT EXISTS scrape_run_history (id INTEGER PRIMARY KEY AUTOINCREMENT, started_at TEXT NOT NULL, success INTEGER NOT NULL DEFAULT 0, failed INTEGER NOT NULL DEFAULT 0)",
     ]
     with engine.connect() as conn:
         for sql in migrations:
