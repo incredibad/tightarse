@@ -223,7 +223,7 @@ function AccountTab({ onLogout, user }) {
 
       <Section title="Change Password">
         {user && (
-          <p className="text-xs text-gray-400 mb-2">Logged in as <strong>{user.username}</strong> ({user.role})</p>
+          <p className="text-xs text-gray-400">Logged in as <strong>{user.username}</strong> ({user.role})</p>
         )}
         <form onSubmit={changePassword} className="space-y-2">
           <input type="password" placeholder="Current password" value={curr} onChange={(e) => setCurr(e.target.value)} className={inputCls} required />
@@ -513,7 +513,7 @@ function AdminGeneralTab({ settings, set, save, saving, saveMsg }) {
           );
         })()}
         {scrapeStats && (
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+          <p className="text-xs text-gray-400 dark:text-gray-500">
             Last scraped {timeAgo(scrapeStats.last_scraped_at) ?? "never"}
             {scrapeStats.oldest_scraped_at && scrapeStats.last_scraped_at !== scrapeStats.oldest_scraped_at && (
               <> · oldest {timeAgo(scrapeStats.oldest_scraped_at)}</>
@@ -523,11 +523,7 @@ function AdminGeneralTab({ settings, set, save, saving, saveMsg }) {
         )}
       </Section>
 
-      <Section title="Drakes Store Map">
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-          Scan the Drakes website to discover online stores and update the store dropdown.
-          Only stores that respond successfully will be saved.
-        </p>
+      <Section title="Drakes Store Map" description="Scan the Drakes website to discover online stores and update the store dropdown. Only stores that respond successfully will be saved.">
         <button onClick={runDrakesScan} disabled={drakesScanLoading} className={btnCls}>
           {drakesScanLoading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
           {drakesScanLoading ? "Scanning…" : "Scan Drakes stores"}
@@ -581,12 +577,7 @@ function AdminNetworkTab({ settings, set, save, saving, saveMsg }) {
 
   return (
     <>
-      <Section title="VPN / Proxy">
-        <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed mb-2">
-          Route scraping through an HTTP proxy (e.g. gluetun on your Docker network).
-          Amazon Australia <strong>always</strong> requires a proxy to protect your home IP — it will not
-          scrape without one. Other stores use the proxy only when "Route all through VPN" is on.
-        </p>
+      <Section title="VPN / Proxy" description='Route scraping through an HTTP proxy (e.g. gluetun on your Docker network). Amazon Australia always requires a proxy to protect your home IP. Other stores use the proxy only when "Route all through VPN" is on.'>
         <Field label="Proxy URL">
           <input
             type="url"
@@ -601,7 +592,7 @@ function AdminNetworkTab({ settings, set, save, saving, saveMsg }) {
           value={settings.scrape_via_vpn === "true"}
           onChange={(v) => set("scrape_via_vpn", v ? "true" : "false")}
         />
-        <div className="flex items-center gap-3 pt-1 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap">
           <SaveBar keys={["vpn_proxy_url", "scrape_via_vpn"]} save={save} saving={saving} msg={saveMsg} />
           <button onClick={testProxy} disabled={proxyTesting || !settings.vpn_proxy_url} className={btnCls}>
             {proxyTesting ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
@@ -691,13 +682,55 @@ function AdminEmailTab({ settings, set, save, saving, saveMsg }) {
   );
 }
 
+function AddUserModal({ onClose, onCreated }) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState("user");
+  const [msg, setMsg] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function submit(e) {
+    e.preventDefault(); setMsg("");
+    setSaving(true);
+    try {
+      await api.createUser(username, password, role);
+      onCreated();
+      onClose();
+    } catch (e) { setMsg(e.message); } finally { setSaving(false); }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4" onClick={onClose}>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-sm p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-gray-900 dark:text-white">Add user</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><X size={18} /></button>
+        </div>
+        <form onSubmit={submit} className="space-y-3">
+          <input type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} className={inputCls} required autoFocus />
+          <input type="password" placeholder="Password (8+ chars)" value={password} onChange={(e) => setPassword(e.target.value)} className={inputCls} required />
+          <select value={role} onChange={(e) => setRole(e.target.value)} className={inputCls}>
+            <option value="user">user</option>
+            <option value="admin">admin</option>
+          </select>
+          {msg && <p className="text-xs text-red-500">{msg}</p>}
+          <div className="flex gap-2">
+            <button type="submit" disabled={saving} className={btnCls}>
+              {saving ? <Loader2 size={14} className="animate-spin" /> : <UserPlus size={14} />}
+              Create user
+            </button>
+            <button type="button" onClick={onClose} className="text-sm text-gray-400 hover:text-gray-600 px-2">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function AdminUsersTab() {
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(true);
-  const [newUsername, setNewUsername] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [newRole, setNewRole] = useState("user");
-  const [createMsg, setCreateMsg] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
   const [resetTarget, setResetTarget] = useState(null);
   const [resetPw, setResetPw] = useState("");
   const [resetMsg, setResetMsg] = useState("");
@@ -707,17 +740,6 @@ function AdminUsersTab() {
   async function loadUsers() {
     setUsersLoading(true);
     try { setUsers(await api.listUsers()); } finally { setUsersLoading(false); }
-  }
-
-  async function createUser(e) {
-    e.preventDefault(); setCreateMsg("");
-    try {
-      await api.createUser(newUsername, newPassword, newRole);
-      setNewUsername(""); setNewPassword(""); setNewRole("user");
-      setCreateMsg("User created");
-      setTimeout(() => setCreateMsg(""), 2000);
-      loadUsers();
-    } catch (e) { setCreateMsg(e.message); }
   }
 
   async function toggleActive(u) {
@@ -762,7 +784,7 @@ function AdminUsersTab() {
         </div>
       )}
       {resetTarget && (
-        <form onSubmit={submitReset} className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-2">
+        <form onSubmit={submitReset} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-2">
           <p className="text-xs font-medium text-gray-600 dark:text-gray-300">Reset password for <strong>{resetTarget.username}</strong></p>
           <input type="password" placeholder="New password (8+ chars)" value={resetPw} onChange={(e) => setResetPw(e.target.value)} className={inputCls} required />
           {resetMsg && <p className={`text-xs ${resetMsg === "Password reset" ? "text-brand-600" : "text-red-500"}`}>{resetMsg}</p>}
@@ -772,17 +794,10 @@ function AdminUsersTab() {
           </div>
         </form>
       )}
-      <form onSubmit={createUser} className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-2">
-        <p className="text-xs font-medium text-gray-600 dark:text-gray-300">New user</p>
-        <input type="text" placeholder="Username" value={newUsername} onChange={(e) => setNewUsername(e.target.value)} className={inputCls} required />
-        <input type="password" placeholder="Password (8+ chars)" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className={inputCls} required />
-        <select value={newRole} onChange={(e) => setNewRole(e.target.value)} className={inputCls}>
-          <option value="user">user</option>
-          <option value="admin">admin</option>
-        </select>
-        {createMsg && <p className={`text-xs ${createMsg === "User created" ? "text-brand-600" : "text-red-500"}`}>{createMsg}</p>}
-        <button type="submit" className={btnCls}><UserPlus size={14} /> Create user</button>
-      </form>
+      <button onClick={() => setAddOpen(true)} className={btnCls}>
+        <UserPlus size={14} /> Add user
+      </button>
+      {addOpen && <AddUserModal onClose={() => setAddOpen(false)} onCreated={loadUsers} />}
     </Section>
   );
 }
