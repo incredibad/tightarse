@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from urllib.parse import urlparse
-from database import get_db, SessionLocal, Product, Store, PriceHistory, Item, get_user_setting, get_global_setting
+from database import get_db, SessionLocal, Product, Store, PriceHistory, Item, get_user_setting, get_global_setting, record_scrape_run, ScrapeRunHistory
 from auth import require_auth, require_admin, User
 from scrapers import get_scraper
 import scheduler as sched
@@ -95,13 +95,37 @@ def _own_product(db: Session, product_id: int, user_id: int) -> Product:
 @router.get("/scrape-stats")
 async def scrape_stats(_admin: User = Depends(require_admin), db: Session = Depends(get_db)):
     total = db.query(Product).filter(Product.active == True).count()
-    last_run = sched.get_last_run()
+    last = db.query(ScrapeRunHistory).order_by(ScrapeRunHistory.started_at.desc()).first()
+
+    def _fmt(val):
+        if val is None:
+            return None
+        if isinstance(val, str):
+            return val.replace(" ", "T") + "Z"
+        return val.isoformat() + "Z"
+
     return {
         "total_active": total,
-        "last_run_at": last_run["at"],
-        "last_run_success": last_run["success"],
-        "last_run_failed": last_run["failed"],
+        "last_run_at": _fmt(last.started_at) if last else None,
+        "last_run_success": last.success if last else 0,
+        "last_run_failed": last.failed if last else 0,
     }
+
+
+@router.get("/scrape-history")
+async def scrape_history(_admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    def _fmt(val):
+        if val is None:
+            return None
+        if isinstance(val, str):
+            return val.replace(" ", "T") + "Z"
+        return val.isoformat() + "Z"
+
+    rows = db.query(ScrapeRunHistory).order_by(ScrapeRunHistory.started_at.desc()).limit(200).all()
+    return [
+        {"id": r.id, "started_at": _fmt(r.started_at), "success": r.success, "failed": r.failed}
+        for r in rows
+    ]
 
 
 @router.get("/", response_model=list[ProductOut])
@@ -260,7 +284,7 @@ async def rescrape_item(item_id: int, current_user: User = Depends(require_auth)
 
 @router.post("/rescrape/all", status_code=200)
 async def rescrape_all(_admin: User = Depends(require_admin)):
-    from datetime import datetime
+    started_at = datetime.utcnow()
     db = SessionLocal()
     try:
         ids = [p.id for p in db.query(Product).filter(Product.active == True).all()]
@@ -269,7 +293,11 @@ async def rescrape_all(_admin: User = Depends(require_admin)):
     results = await asyncio.gather(*[_scrape_limited(pid) for pid in ids]) if ids else []
     success = sum(1 for r in results if r)
     failed = len(ids) - success
-    sched._last_run.update({"at": datetime.utcnow().isoformat() + "Z", "success": success, "failed": failed})
+    db = SessionLocal()
+    try:
+        record_scrape_run(db, started_at, success, failed)
+    finally:
+        db.close()
     return {"scraped": success, "failed": failed}
 
 

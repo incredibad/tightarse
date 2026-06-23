@@ -8,7 +8,7 @@ from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy.orm import Session
 
-from database import SessionLocal, Product, Store, PriceHistory, Notification, Setting, get_user_setting, get_global_setting, record_vpn_ip
+from database import SessionLocal, Product, Store, PriceHistory, Notification, Setting, get_user_setting, get_global_setting, record_vpn_ip, record_scrape_run
 from scrapers import get_scraper
 from notifications import send_price_drop_notification
 
@@ -17,12 +17,6 @@ logger = logging.getLogger(__name__)
 scheduler = AsyncIOScheduler()
 
 _SCRAPE_SEM = asyncio.Semaphore(6)  # max concurrent URL scrapes across scheduler + manual triggers
-
-_last_run: dict = {"at": None, "success": 0, "failed": 0}
-
-
-def get_last_run() -> dict:
-    return dict(_last_run)
 
 
 async def scrape_product(product_id: int) -> bool:
@@ -184,11 +178,16 @@ async def scrape_all_active_products():
     if proxy_url and via_vpn:
         await _check_and_record_vpn_ip(proxy_url)
 
+    started_at = datetime.utcnow()
     results = await asyncio.gather(*[_scrape_url_group(url, ids) for url, ids in url_to_ids.items()])
     success = sum(r[0] for r in results)
     failed = sum(r[1] for r in results)
-    _last_run.update({"at": datetime.utcnow().isoformat() + "Z", "success": success, "failed": failed})
     logger.info(f"Scheduled scrape complete: {success} succeeded, {failed} failed")
+    db = SessionLocal()
+    try:
+        record_scrape_run(db, started_at, success, failed)
+    finally:
+        db.close()
 
 
 def _resolve_proxy(db: Session, scraper_module: str) -> str:
