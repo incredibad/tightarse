@@ -90,7 +90,7 @@ export default function Journey() {
             </div>
           </button>
           {!isCollapsed && <ul className="divide-y divide-gray-100 dark:divide-gray-700">
-            {store.items.map((item) => {
+            {[...store.items].sort((a, b) => a.item_name.localeCompare(b.item_name)).map((item) => {
               const hasAlts = item.all_products.length > 1;
               const isOpen = expanded[item.item_id];
               const onSpecial = item.cheapest_product.on_special;
