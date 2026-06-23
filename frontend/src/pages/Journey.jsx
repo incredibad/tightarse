@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { ChevronDown, ChevronUp, Loader2, ShoppingBag, RotateCcw } from "lucide-react";
 import { api } from "../api";
 import StorePill from "../components/StorePill";
-import { Tooltip } from "../components/Tooltip";
 import { formatCupPrice, STORE_COLORS } from "../utils";
 
 function CupPrice({ price, label }) {
@@ -27,10 +26,15 @@ export default function Journey() {
   const [checklist, setChecklist] = useState([]);
   const [checklistCollapsed, setChecklistCollapsed] = useState(false);
   const [checkedItems, setCheckedItems] = useState(new Set());
+  const [showChecklist, setShowChecklist] = useState(true);
 
   useEffect(() => {
     api.getJourney().then((data) => { setJourney(data); setLoading(false); });
     api.getChecklist().then(setChecklist).catch(() => {});
+    api.getSettings().then((rows) => {
+      const val = rows.find((r) => r.key === "include_checklist_in_journey")?.value;
+      setShowChecklist(val !== "false");
+    }).catch(() => {});
   }, []);
 
   function toggleAlternatives(e, itemId) {
@@ -84,7 +88,7 @@ export default function Journey() {
         {checkedItems.size > 0 && (
           <button
             onClick={resetJourney}
-            className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             <RotateCcw size={13} /> Reset
           </button>
@@ -99,7 +103,7 @@ export default function Journey() {
       </div>
 
       {/* Checklist accordion */}
-      {checklist.length > 0 && (
+      {showChecklist && checklist.length > 0 && (
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
           <button
             onClick={() => setChecklistCollapsed((p) => !p)}
@@ -121,9 +125,9 @@ export default function Journey() {
                 <li
                   key={item.id}
                   onClick={() => toggleChecklistItem(item)}
-                  className={`px-3 py-2 cursor-pointer transition-opacity select-none ${item.checked ? "opacity-40" : ""}`}
+                  className={`px-3 py-2 cursor-pointer select-none transition-colors ${item.checked ? "bg-gray-100 dark:bg-gray-900" : ""}`}
                 >
-                  <p className={`text-sm text-gray-900 dark:text-white ${item.checked ? "line-through" : ""}`}>{item.name}</p>
+                  <p className={`text-sm ${item.checked ? "line-through text-gray-400 dark:text-gray-500" : "text-gray-900 dark:text-white"}`}>{item.name}</p>
                 </li>
               ))}
             </ul>
@@ -165,19 +169,15 @@ export default function Journey() {
                 <li
                   key={item.item_id}
                   onClick={() => toggleShoppingItem(item.item_id)}
-                  className={`flex divide-x divide-gray-100 dark:divide-gray-700 cursor-pointer transition-opacity select-none ${isChecked ? "opacity-40" : ""}`}
+                  className={`flex divide-x cursor-pointer select-none transition-colors ${isChecked ? "bg-gray-100 dark:bg-gray-900 divide-gray-200 dark:divide-gray-800" : "divide-gray-100 dark:divide-gray-700"}`}
                 >
                   {/* Main row */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center">
                       {/* Name — 50% */}
                       <div className="w-[50%] min-w-0 px-3 py-2">
-                        <Tooltip content={item.item_name}>
-                          <p className={`font-medium text-gray-900 dark:text-white text-sm truncate ${isChecked ? "line-through" : ""}`}>{item.item_name}</p>
-                        </Tooltip>
-                        <Tooltip content={cp.product_name}>
-                          <p className="text-xs text-gray-400 truncate">{cp.product_name}</p>
-                        </Tooltip>
+                        <p className={`font-medium text-sm truncate ${isChecked ? "line-through text-gray-400 dark:text-gray-500" : "text-gray-900 dark:text-white"}`} title={item.item_name}>{item.item_name}</p>
+                        <p className={`text-xs truncate ${isChecked ? "text-gray-300 dark:text-gray-600" : "text-gray-400"}`} title={cp.product_name}>{cp.product_name}</p>
                       </div>
                       {/* Cup price */}
                       <div className="w-[22%] px-1 py-2 shrink-0">
@@ -198,14 +198,12 @@ export default function Journey() {
                     </div>
 
                     {isOpen && hasAlts && (
-                      <div className="border-t border-gray-100 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 divide-y divide-gray-100 dark:divide-gray-600">
+                      <div onClick={(e) => e.stopPropagation()} className="border-t border-gray-100 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 divide-y divide-gray-100 dark:divide-gray-600">
                         {item.all_products.slice(1).map((alt) => (
                           <div key={alt.product_id} className="flex items-center">
                             <div className="w-[50%] min-w-0 px-4 py-2 flex items-center gap-2">
                               <StorePill name={alt.store_name} short />
-                              <Tooltip content={alt.product_name}>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{alt.product_name}</p>
-                              </Tooltip>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={alt.product_name}>{alt.product_name}</p>
                             </div>
                             <div className="w-[22%] px-1 py-2 shrink-0">
                               <CupPrice price={alt.cup_price} label={alt.cup_label} />
