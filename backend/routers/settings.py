@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from database import get_db, Setting, UserSetting, Product, GLOBAL_SETTING_KEYS, USER_SETTING_DEFAULTS, get_global_setting
+from database import get_db, SessionLocal, Setting, UserSetting, Product, VpnCheckHistory, GLOBAL_SETTING_KEYS, USER_SETTING_DEFAULTS, get_global_setting
 from auth import require_auth, require_admin, User
 import scheduler as sched
 
@@ -175,13 +175,52 @@ async def test_email(
 @router.post("/test-proxy")
 async def test_proxy(_admin: User = Depends(require_admin), db: Session = Depends(get_db)):
     proxy_url = get_global_setting(db, "vpn_proxy_url")
+    db.close()
     if not proxy_url:
         raise HTTPException(status_code=400, detail="No proxy URL configured")
     try:
         async with httpx.AsyncClient(proxy=proxy_url, timeout=10.0) as client:
-            r = await client.get("https://api.ipify.org?format=json")
+            r = await client.get("https://ipinfo.io/json")
             r.raise_for_status()
-            ip = r.json().get("ip", "unknown")
+            data = r.json()
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Proxy test failed: {e}")
-    return {"ip": ip}
+
+    ip = data.get("ip", "unknown")
+    org = data.get("org")
+    city = data.get("city")
+    country = data.get("country")
+
+    db2 = SessionLocal()
+    try:
+        from datetime import datetime
+        db2.add(VpnCheckHistory(ip=ip, org=org, city=city, country=country, checked_at=datetime.utcnow()))
+        db2.commit()
+        # Prune to 200 most recent
+        oldest_ids = [
+            row.id for row in db2.query(VpnCheckHistory.id)
+            .order_by(VpnCheckHistory.checked_at.desc())
+            .offset(200).all()
+        ]
+        if oldest_ids:
+            db2.query(VpnCheckHistory).filter(VpnCheckHistory.id.in_(oldest_ids)).delete(synchronize_session=False)
+            db2.commit()
+    finally:
+        db2.close()
+
+    return {"ip": ip, "org": org, "city": city, "country": country}
+
+
+@router.get("/proxy-history")
+async def proxy_history(_admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    rows = (
+        db.query(VpnCheckHistory)
+        .order_by(VpnCheckHistory.checked_at.desc())
+        .limit(50)
+        .all()
+    )
+    return [
+        {"id": r.id, "ip": r.ip, "org": r.org, "city": r.city, "country": r.country,
+         "checked_at": r.checked_at.isoformat() + "Z"}
+        for r in rows
+    ]

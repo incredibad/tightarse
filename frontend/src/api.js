@@ -102,6 +102,7 @@ export const api = {
   updateSettings: (settings) => request("/settings/", { method: "PUT", body: { settings } }),
   testEmail: (to) => request("/settings/test-email", { method: "POST", body: { to } }),
   testProxy: () => request("/settings/test-proxy", { method: "POST" }),
+  getProxyHistory: () => request("/settings/proxy-history"),
 
   // Checklist
   getChecklist: () => request("/checklist/"),
