@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Bash(docker *)",
+      "Bash(curl *)",
+      "Bash(git push *)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "docker compose build 2>&1 | tail -5",
+            "async": true,
+            "statusMessage": "Rebuilding Docker images..."
+          }
+        ]
+      }
+    ]
+  }
+}
