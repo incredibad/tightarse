@@ -858,15 +858,21 @@ function AdminUsersTab() {
   );
 }
 
+const LOG_LEVELS = ["ALL", "INFO", "WARN", "ERROR"];
+
 function AdminLogsTab() {
   const [logs, setLogs] = useState([]);
   const [paused, setPaused] = useState(false);
+  const [levelFilter, setLevelFilter] = useState("ALL");
   const bottomRef = useRef(null);
   const pausedRef = useRef(false);
-
   pausedRef.current = paused;
 
   useEffect(() => {
+    // Load persisted history from file
+    api.getLogHistory().then(({ lines }) => setLogs(lines)).catch(() => {});
+
+    // Stream only new lines written after connect
     const token = localStorage.getItem("ta_token");
     const es = new EventSource(`/api/admin/logs/stream?token=${encodeURIComponent(token)}`);
     es.onmessage = (e) => {
@@ -875,7 +881,7 @@ function AdminLogsTab() {
         const line = JSON.parse(e.data);
         setLogs((prev) => {
           const next = [...prev, line];
-          return next.length > 300 ? next.slice(-300) : next;
+          return next.length > 5000 ? next.slice(-5000) : next;
         });
       } catch {}
     };
@@ -888,41 +894,59 @@ function AdminLogsTab() {
   }, [logs, paused]);
 
   function levelColor(line) {
-    if (line.includes(" ERROR "))    return "text-red-400";
-    if (line.includes(" WARNING "))  return "text-yellow-400";
-    if (line.includes(" INFO "))     return "text-gray-300";
+    if (line.includes(" ERROR "))   return "text-red-400";
+    if (line.includes(" WARNING ")) return "text-yellow-400";
+    if (line.includes(" INFO "))    return "text-gray-300";
     return "text-gray-500";
   }
 
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-gray-500 dark:text-gray-400">{logs.length} lines</span>
-        <div className="flex gap-2">
+  const filtered = levelFilter === "ALL" ? logs : logs.filter((l) =>
+    levelFilter === "WARN" ? l.includes(" WARNING ") : l.includes(` ${levelFilter} `)
+  );
+
+  const controls = (
+    <div className="flex items-center gap-2">
+      <div className="flex rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden text-xs font-medium">
+        {LOG_LEVELS.map((lv) => (
           <button
-            onClick={() => setPaused((p) => !p)}
-            className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition-colors ${paused ? "border-brand-500 text-brand-600 bg-brand-50 dark:bg-brand-950" : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+            key={lv}
+            onClick={() => setLevelFilter(lv)}
+            className={`px-2.5 py-1 transition-colors ${levelFilter === lv ? "bg-gray-800 text-white" : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"}`}
           >
-            {paused ? "Resume" : "Pause"}
+            {lv}
           </button>
-          <button
-            onClick={() => setLogs([])}
-            className="text-xs px-2.5 py-1 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors flex items-center gap-1"
-          >
-            <Trash size={11} /> Clear
-          </button>
-        </div>
+        ))}
       </div>
+      <button
+        onClick={() => setPaused((p) => !p)}
+        className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition-colors ${paused ? "border-brand-500 text-brand-600 bg-brand-50 dark:bg-brand-950" : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+      >
+        {paused ? "Resume" : "Pause"}
+      </button>
+      <button
+        onClick={() => setLogs([])}
+        className="text-xs px-2.5 py-1 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors flex items-center gap-1"
+      >
+        <Trash size={11} /> Clear
+      </button>
+    </div>
+  );
+
+  return (
+    <Section title="Logs" action={controls}>
       <div className="font-mono text-xs bg-gray-950 rounded-xl p-3 h-[26rem] overflow-y-auto space-y-0.5">
-        {logs.length === 0 && (
-          <span className="text-gray-600">Waiting for log output…</span>
+        {filtered.length === 0 && (
+          <span className="text-gray-600">{logs.length === 0 ? "Loading…" : "No matching log entries."}</span>
         )}
-        {logs.map((line, i) => (
+        {filtered.map((line, i) => (
           <div key={i} className={`leading-5 whitespace-pre-wrap break-all ${levelColor(line)}`}>{line}</div>
         ))}
         <div ref={bottomRef} />
       </div>
-    </div>
+      <p className="text-xs text-gray-400 dark:text-gray-500">
+        {filtered.length}{levelFilter !== "ALL" ? ` ${levelFilter}` : ""} lines · 7-day retention
+      </p>
+    </Section>
   );
 }
 

@@ -1,6 +1,7 @@
 import logging
 import os
 from contextlib import asynccontextmanager
+from logging.handlers import TimedRotatingFileHandler
 
 from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,9 +19,17 @@ FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "frontend")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+_LOG_FMT = logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s", datefmt="%H:%M:%S")
+
 _buf_handler = LogBufferHandler()
-_buf_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s", datefmt="%H:%M:%S"))
+_buf_handler.setFormatter(_LOG_FMT)
 logging.getLogger().addHandler(_buf_handler)
+
+_LOG_FILE = "/data/tightarse.log"
+os.makedirs(os.path.dirname(_LOG_FILE), exist_ok=True)
+_file_handler = TimedRotatingFileHandler(_LOG_FILE, when="midnight", backupCount=7, encoding="utf-8")
+_file_handler.setFormatter(_LOG_FMT)
+logging.getLogger().addHandler(_file_handler)
 
 
 @asynccontextmanager

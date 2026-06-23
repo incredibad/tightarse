@@ -88,6 +88,7 @@ export const api = {
   rescrapeAll: () => request("/products/rescrape/all", { method: "POST" }),
   getScrapeStats: () => request("/products/scrape-stats"),
   getScrapeHistory: () => request("/products/scrape-history"),
+  getLogHistory: () => request("/admin/logs/history"),
 
   // Stores
   getStores: () => request("/stores/"),
