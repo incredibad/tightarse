@@ -1,7 +1,7 @@
 import re
 import httpx
 from bs4 import BeautifulSoup
-from .base import BaseScraper, ScrapeResult
+from .base import BaseScraper, ScrapeResult, infer_cup_price
 
 
 class ALDIScraper(BaseScraper):
@@ -18,7 +18,7 @@ class ALDIScraper(BaseScraper):
         cup_price, cup_label = _extract_cup_price(soup)
         package_size = _extract_package_size(soup)
         if cup_price is None and price is not None:
-            cup_price, cup_label = _infer_cup_price(name, price)
+            cup_price, cup_label = infer_cup_price(name, price)
 
         img_tag = soup.select_one(".product-detail__image img, .product-image img, [class*='product-image'] img")
         image_url = None
@@ -62,6 +62,8 @@ class ALDIScraper(BaseScraper):
             full_name = f"{brand} {name}".strip() if brand else name
             price = _parse_price(price_tag.get_text(strip=True)) if price_tag else None
             cup_price, cup_label = _extract_cup_price(card)
+            if cup_price is None and price is not None:
+                cup_price, cup_label = infer_cup_price(full_name, price)
             size_tag = card.select_one(".product-tile__unit-of-measurement")
             package_size = size_tag.get_text(strip=True) or None if size_tag else None
             img_tag = card.select_one("img")
@@ -125,24 +127,6 @@ def _extract_cup_price(soup: BeautifulSoup) -> tuple[float | None, str | None]:
                 return float(m.group(1)), m.group(2).lower().strip()
     return None, None
 
-
-def _infer_cup_price(name: str, price: float) -> tuple[float | None, str | None]:
-    """Calculate unit price from size embedded in product name when ALDI doesn't provide one."""
-    # Volume: 950ml, 1L, 1.5L, 750mL
-    m = re.search(r"([\d.]+)\s*(ml|l)\b", name, re.IGNORECASE)
-    if m:
-        qty = float(m.group(1))
-        unit = m.group(2).lower()
-        ml = qty * 1000 if unit == "l" else qty
-        return round(price / ml * 100, 4), "per 100ml"
-    # Weight: 500g, 1kg, 1.5 kg
-    m = re.search(r"([\d.]+)\s*(kg|g)\b", name, re.IGNORECASE)
-    if m:
-        qty = float(m.group(1))
-        unit = m.group(2).lower()
-        grams = qty * 1000 if unit == "kg" else qty
-        return round(price / grams * 100, 4), "per 100g"
-    return None, None
 
 
 def _parse_price(text: str) -> float | None:

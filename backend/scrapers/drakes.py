@@ -1,7 +1,7 @@
 import re
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
-from .base import BaseScraper, ScrapeResult
+from .base import BaseScraper, ScrapeResult, infer_cup_price
 
 _HEADERS = {
     "User-Agent": (
@@ -106,6 +106,8 @@ class DrakesScraper(BaseScraper):
                 src = img_tag.get("src") or img_tag.get("data-src") or None
                 if src:
                     image_url = src if src.startswith("http") else f"{base}{src}"
+            if cup_price is None and price is not None:
+                cup_price, cup_label = infer_cup_price(name, price)
             results.append({"name": name, "price": price, "url": url, "store_name": self.store_name,
                             "cup_price": cup_price, "cup_label": cup_label, "package_size": package_size,
                             "image_url": image_url})
@@ -161,6 +163,8 @@ class DrakesScraper(BaseScraper):
             if src:
                 image_url = src if src.startswith("http") else f"{base_url}{src}"
 
+        if cup_price is None and price is not None:
+            cup_price, cup_label = infer_cup_price(name, price)
         return ScrapeResult(
             name=name,
             price=price,

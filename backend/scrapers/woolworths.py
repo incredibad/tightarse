@@ -5,7 +5,7 @@ import re
 import tempfile
 from urllib.parse import urlencode
 
-from .base import BaseScraper, ScrapeResult
+from .base import BaseScraper, ScrapeResult, infer_cup_price
 
 _HOME = "https://www.woolworths.com.au"
 _API_BASE = f"{_HOME}/apis/ui"
@@ -114,6 +114,8 @@ class WoolworthsScraper(BaseScraper):
         cup_measure = (product.get("CupMeasure") or "").strip()
         cup_price = mb.get("cup_price") or (float(cup_price_raw) if cup_price_raw is not None else None)
         cup_label = mb.get("cup_label") or (f"per {cup_measure.lower()}" if cup_measure else None)
+        if cup_price is None and price is not None:
+            cup_price, cup_label = infer_cup_price(name, float(price))
 
         image_url = (
             product.get("LargeImageFile")
@@ -166,13 +168,18 @@ class WoolworthsScraper(BaseScraper):
                     or p.get("SmallImageFile")
                     or f"https://cdn0.woolworths.media/content/wowproductimages/large/{stockcode}.jpg"
                 )
+                p_cup = mb.get("cup_price") or (float(cup_price_raw) if cup_price_raw is not None else None)
+                p_label = mb.get("cup_label") or (f"per {cup_measure}" if cup_measure else None)
+                p_price = mb.get("price") or (float(price) if price is not None else None)
+                if p_cup is None and p_price is not None:
+                    p_cup, p_label = infer_cup_price(name, p_price)
                 results.append({
                     "name": name,
-                    "price": mb.get("price") or (float(price) if price is not None else None),
+                    "price": p_price,
                     "url": f"{_HOME}/shop/productdetails/{stockcode}",
                     "store_name": self.store_name,
-                    "cup_price": mb.get("cup_price") or (float(cup_price_raw) if cup_price_raw is not None else None),
-                    "cup_label": mb.get("cup_label") or (f"per {cup_measure}" if cup_measure else None),
+                    "cup_price": p_cup,
+                    "cup_label": p_label,
                     "package_size": package_size,
                     "image_url": image_url,
                 })

@@ -1,7 +1,7 @@
 import asyncio
 import re
 import httpx
-from .base import BaseScraper, ScrapeResult
+from .base import BaseScraper, ScrapeResult, infer_cup_price
 
 _BASE = "https://www.coles.com.au"
 
@@ -100,13 +100,18 @@ class ColesScraper(BaseScraper):
             mb = _multibuy_coles(pricing)
             cup_price_base, cup_label_base = _extract_cup_price(pricing)
             image_url = _extract_image_url(p.get("imageUris"))
+            p_cup = mb.get("cup_price", cup_price_base)
+            p_label = mb.get("cup_label", cup_label_base)
+            p_price = mb.get("price") or (float(price) if price is not None else None)
+            if p_cup is None and p_price is not None:
+                p_cup, p_label = infer_cup_price(name, p_price)
             results.append({
                 "name": name,
-                "price": mb.get("price") or (float(price) if price is not None else None),
+                "price": p_price,
                 "url": f"{_BASE}/product/{slug}-{product_id}",
                 "store_name": self.store_name,
-                "cup_price": mb.get("cup_price", cup_price_base),
-                "cup_label": mb.get("cup_label", cup_label_base),
+                "cup_price": p_cup,
+                "cup_label": p_label,
                 "package_size": package_size,
                 "image_url": image_url,
             })
@@ -164,6 +169,8 @@ class ColesScraper(BaseScraper):
         cup_price_base, cup_label_base = _extract_cup_price(pricing)
         cup_price = mb.get("cup_price", cup_price_base)
         cup_label = mb.get("cup_label", cup_label_base)
+        if cup_price is None and price is not None:
+            cup_price, cup_label = infer_cup_price(name, float(price))
 
         image_url = _extract_image_url(product.get("imageUris"))
         return ScrapeResult(
