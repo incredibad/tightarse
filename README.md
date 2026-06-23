@@ -27,7 +27,7 @@ A self-hosted grocery price tracker and shopping assistant. Add items to your li
 - **Multi-store price tracking** — Track the same item across Woolworths, Coles, ALDI, Drakes, and Amazon AU
 - **Paste a URL to add a product** — Supports direct product URLs or in-store search for supported stores
 - **Special / sale detection** — Highlights on-special prices and shows the previous was-price
-- **Cup price (unit price)** — Shows price per 100g, per litre, etc. for easy comparison
+- **Cup price (unit price)** — Shows price per 100g, per 100ml, per 100 sheets, etc. for easy comparison; inferred from the product name when the store doesn't provide one
 - **Price history** — Full chart and table of every recorded price per product, accessible from the product ⋮ menu
 - **Out of stock tracking** — Products are marked out of stock when no longer available; the item's cheapest in-stock alternative is used instead
 - **Scheduled scraping** — Prices are automatically refreshed on a configurable interval (set in hours)
@@ -42,6 +42,7 @@ A self-hosted grocery price tracker and shopping assistant. Add items to your li
 ### Checklist
 - **Temporary scratch pad** — A simple checklist for your shopping trip; completely separate from the tracked list
 - **Check off items** — Checked items sink to a strikethrough section at the bottom
+- **Inline editing** — Tap an unchecked item's name to edit it in place
 - **Clear checked** — Remove all ticked items in one tap
 - **Promote to Shopping List** — Tap the cart icon on any item to create a Shopping List entry and jump straight to the add-product search for it
 
@@ -70,21 +71,15 @@ A self-hosted grocery price tracker and shopping assistant. Add items to your li
 
 ```yaml
 services:
-  backend:
+  app:
     image: incredibad/tightarse:latest
     restart: unless-stopped
+    ports:
+      - "7382:7382"
     volumes:
       - tightarse_data:/data
     environment:
       - TZ=Australia/Brisbane   # set your local timezone
-
-  frontend:
-    image: incredibad/tightarse-frontend:latest
-    restart: unless-stopped
-    ports:
-      - "7382:80"
-    depends_on:
-      - backend
 
 volumes:
   tightarse_data:
