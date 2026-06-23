@@ -232,14 +232,23 @@ async def create_product(
 @router.get("/scrape-stats")
 async def scrape_stats(_admin: User = Depends(require_admin), db: Session = Depends(get_db)):
     from sqlalchemy import func
+
+    def _fmt(val):
+        if val is None:
+            return None
+        # func.max/min on DateTime in SQLite returns a raw string, not datetime
+        if isinstance(val, str):
+            return val.replace(" ", "T") + "Z"
+        return val.isoformat() + "Z"
+
     row = db.query(
         func.max(Product.last_scraped_at).label("last"),
         func.min(Product.last_scraped_at).label("oldest"),
         func.count(Product.id).label("total"),
     ).filter(Product.active == True).first()
     return {
-        "last_scraped_at": row.last.isoformat() + "Z" if row.last else None,
-        "oldest_scraped_at": row.oldest.isoformat() + "Z" if row.oldest else None,
+        "last_scraped_at": _fmt(row.last),
+        "oldest_scraped_at": _fmt(row.oldest),
         "total_active": row.total,
     }
 
