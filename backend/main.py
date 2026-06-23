@@ -9,13 +9,18 @@ from fastapi.responses import FileResponse
 
 from database import init_db, SessionLocal, Setting
 from routers import items, products, journey, settings, stores, checklist
-from routers import auth as auth_router
+from routers import auth as auth_router, logs as logs_router
 import scheduler as sched
+from log_buffer import LogBufferHandler
 
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "frontend")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+_buf_handler = LogBufferHandler()
+_buf_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s", datefmt="%H:%M:%S"))
+logging.getLogger().addHandler(_buf_handler)
 
 
 @asynccontextmanager
@@ -58,6 +63,7 @@ api.include_router(journey.router)
 api.include_router(settings.router)
 api.include_router(stores.router)
 api.include_router(checklist.router)
+api.include_router(logs_router.router)
 app.include_router(api)
 
 

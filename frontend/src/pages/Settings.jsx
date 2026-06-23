@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Sun, Moon, LogOut, Save, RefreshCw, Loader2,
   UserPlus, Trash2, KeyRound, ShieldCheck, ShieldOff, User, Send, X,
-  ChevronUp, ChevronDown, ToggleLeft, ToggleRight,
+  ChevronUp, ChevronDown, ToggleLeft, ToggleRight, Trash,
 } from "lucide-react";
-import { api } from "../api";
+import { api, getToken } from "../api";
 
 const DRAKES_STORES = [
   { id: "015", name: "Aldinga" },
@@ -84,7 +84,7 @@ export default function Settings({ onLogout, user }) {
           rel="noopener noreferrer"
           className="text-xs text-gray-400 hover:text-brand-500 transition-colors font-mono"
         >
-          v0.3.3
+          v0.3.4
         </a>
       </div>
 
@@ -383,74 +383,62 @@ function StoresTab() {
 
 // ── Admin tab ─────────────────────────────────────────────────────────────────
 
+const ADMIN_TABS = ["General", "Network", "Email", "Users", "Logs"];
+
 function AdminTab({ settings, set, save, saving, saveMsg }) {
-  const [testEmailOpen, setTestEmailOpen] = useState(false);
+  const [adminTab, setAdminTab] = useState("General");
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+        {ADMIN_TABS.map((t) => (
+          <button
+            key={t}
+            onClick={() => setAdminTab(t)}
+            className={`flex-1 py-1 text-xs font-medium rounded-md transition-colors ${
+              adminTab === t
+                ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+            }`}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {adminTab === "General"  && <AdminGeneralTab settings={settings} set={set} save={save} saving={saving} saveMsg={saveMsg} />}
+      {adminTab === "Network"  && <AdminNetworkTab settings={settings} set={set} save={save} saving={saving} saveMsg={saveMsg} />}
+      {adminTab === "Email"    && <AdminEmailTab   settings={settings} set={set} save={save} saving={saving} saveMsg={saveMsg} />}
+      {adminTab === "Users"    && <AdminUsersTab />}
+      {adminTab === "Logs"     && <AdminLogsTab />}
+    </div>
+  );
+}
+
+function AdminGeneralTab({ settings, set, save, saving, saveMsg }) {
   const [scraping, setScraping] = useState(false);
   const [scrapeMsg, setScrapeMsg] = useState("");
   const [drakesScanResults, setDrakesScanResults] = useState(null);
   const [drakesScanLoading, setDrakesScanLoading] = useState(false);
   const [drakesScanMsg, setDrakesScanMsg] = useState("");
   const [drakesSaveMsg, setDrakesSaveMsg] = useState("");
-  const [users, setUsers] = useState([]);
-  const [usersLoading, setUsersLoading] = useState(true);
-  const [newUsername, setNewUsername] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [newRole, setNewRole] = useState("user");
-  const [createMsg, setCreateMsg] = useState("");
-  const [resetTarget, setResetTarget] = useState(null);
-  const [resetPw, setResetPw] = useState("");
-  const [resetMsg, setResetMsg] = useState("");
-  const [proxyTesting, setProxyTesting] = useState(false);
-  const [proxyTestResult, setProxyTestResult] = useState(null);
-
-  useEffect(() => { loadUsers(); }, []);
-
-  async function loadUsers() {
-    setUsersLoading(true);
-    try { setUsers(await api.listUsers()); } finally { setUsersLoading(false); }
-  }
-
-  async function testProxy() {
-    setProxyTesting(true);
-    setProxyTestResult(null);
-    try {
-      const r = await api.testProxy();
-      setProxyTestResult({ ok: true, ip: r.ip });
-    } catch (e) {
-      setProxyTestResult({ ok: false, msg: e.message });
-    } finally {
-      setProxyTesting(false);
-    }
-  }
 
   async function triggerScrape() {
-    setScraping(true);
-    setScrapeMsg("");
+    setScraping(true); setScrapeMsg("");
     try {
       const r = await api.rescrapeAll();
       setScrapeMsg(`Scraped ${r.scraped} products`);
       setTimeout(() => setScrapeMsg(""), 3000);
-    } catch (e) {
-      setScrapeMsg(e.message);
-    } finally {
-      setScraping(false);
-    }
+    } catch (e) { setScrapeMsg(e.message); } finally { setScraping(false); }
   }
 
   async function runDrakesScan() {
-    setDrakesScanLoading(true);
-    setDrakesScanMsg("");
-    setDrakesScanResults(null);
-    setDrakesSaveMsg("");
+    setDrakesScanLoading(true); setDrakesScanMsg(""); setDrakesScanResults(null); setDrakesSaveMsg("");
     try {
       const results = await api.scanDrakesStores();
       setDrakesScanResults(results);
       if (!results.length) setDrakesScanMsg("No stores found — page structure may have changed.");
-    } catch (e) {
-      setDrakesScanMsg(e.message);
-    } finally {
-      setDrakesScanLoading(false);
-    }
+    } catch (e) { setDrakesScanMsg(e.message); } finally { setDrakesScanLoading(false); }
   }
 
   async function saveDrakesMap() {
@@ -460,45 +448,7 @@ function AdminTab({ settings, set, save, saving, saveMsg }) {
       await api.saveDrakesStores(toSave);
       setDrakesSaveMsg(`Saved ${toSave.length} stores`);
       setTimeout(() => setDrakesSaveMsg(""), 3000);
-    } catch (e) {
-      setDrakesSaveMsg(e.message);
-    }
-  }
-
-  async function createUser(e) {
-    e.preventDefault();
-    setCreateMsg("");
-    try {
-      await api.createUser(newUsername, newPassword, newRole);
-      setNewUsername(""); setNewPassword(""); setNewRole("user");
-      setCreateMsg("User created");
-      setTimeout(() => setCreateMsg(""), 2000);
-      loadUsers();
-    } catch (e) {
-      setCreateMsg(e.message);
-    }
-  }
-
-  async function toggleActive(u) {
-    try { await api.updateUser(u.id, { is_active: !u.is_active }); loadUsers(); } catch {}
-  }
-
-  async function doDeleteUser(u) {
-    if (!window.confirm(`Delete user "${u.username}"? This will delete all their data.`)) return;
-    try { await api.deleteUser(u.id); loadUsers(); } catch {}
-  }
-
-  async function submitReset(e) {
-    e.preventDefault();
-    setResetMsg("");
-    try {
-      await api.resetUserPassword(resetTarget.id, resetPw);
-      setResetMsg("Password reset");
-      setResetPw("");
-      setTimeout(() => { setResetMsg(""); setResetTarget(null); }, 1500);
-    } catch (e) {
-      setResetMsg(e.message);
-    }
+    } catch (e) { setDrakesSaveMsg(e.message); }
   }
 
   return (
@@ -520,44 +470,95 @@ function AdminTab({ settings, set, save, saving, saveMsg }) {
         {scrapeMsg && <p className="text-xs text-brand-600 mt-1">{scrapeMsg}</p>}
       </Section>
 
-      <Section title="VPN / Proxy">
-        <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed mb-2">
-          Route scraping through an HTTP proxy (e.g. gluetun on your Docker network).
-          Amazon Australia <strong>always</strong> requires a proxy to protect your home IP — it will not
-          scrape without one. Other stores use the proxy only when "Route all through VPN" is on.
+      <Section title="Drakes Store Map">
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+          Scan the Drakes website to discover online stores and update the store dropdown.
+          Only stores that respond successfully will be saved.
         </p>
-        <Field label="Proxy URL">
-          <input
-            type="url"
-            value={settings.vpn_proxy_url ?? ""}
-            onChange={(e) => set("vpn_proxy_url", e.target.value)}
-            placeholder="http://gluetun:8888"
-            className={inputCls}
-          />
-        </Field>
-        <Toggle
-          label="Route all scraping through VPN"
-          value={settings.scrape_via_vpn === "true"}
-          onChange={(v) => set("scrape_via_vpn", v ? "true" : "false")}
-        />
-        <div className="flex items-center gap-3 pt-1 flex-wrap">
-          <SaveBar keys={["vpn_proxy_url", "scrape_via_vpn"]} save={save} saving={saving} msg={saveMsg} />
-          <button
-            onClick={testProxy}
-            disabled={proxyTesting || !settings.vpn_proxy_url}
-            className={btnCls}
-          >
-            {proxyTesting ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-            Test connectivity
-          </button>
-          {proxyTestResult && (
-            proxyTestResult.ok
-              ? <span className="text-xs text-brand-600">Connected — exit IP: {proxyTestResult.ip}</span>
-              : <span className="text-xs text-red-500">{proxyTestResult.msg}</span>
-          )}
-        </div>
+        <button onClick={runDrakesScan} disabled={drakesScanLoading} className={btnCls}>
+          {drakesScanLoading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+          {drakesScanLoading ? "Scanning…" : "Scan Drakes stores"}
+        </button>
+        {drakesScanMsg && <p className="text-xs text-red-500 mt-2">{drakesScanMsg}</p>}
+        {drakesScanResults && drakesScanResults.length > 0 && (
+          <div className="mt-3 space-y-1">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+              Found {drakesScanResults.length} stores — {drakesScanResults.filter(s => s.working).length} responding
+            </p>
+            {drakesScanResults.map((s) => (
+              <div key={s.id} className="flex items-center gap-2 py-1 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${s.working ? "bg-green-500" : "bg-red-400"}`} />
+                <span className="text-sm text-gray-800 dark:text-gray-200 flex-1">{s.name}</span>
+                <span className="text-xs font-mono text-gray-400">{s.id}</span>
+                <a href={s.url} target="_blank" rel="noreferrer" className="text-xs text-brand-600 hover:underline shrink-0">{s.url}</a>
+              </div>
+            ))}
+            <div className="flex items-center gap-3 pt-2">
+              <button onClick={saveDrakesMap} className={btnCls}><Save size={14} /> Save working stores</button>
+              {drakesSaveMsg && <span className="text-xs text-brand-600">{drakesSaveMsg}</span>}
+            </div>
+          </div>
+        )}
       </Section>
+    </div>
+  );
+}
 
+function AdminNetworkTab({ settings, set, save, saving, saveMsg }) {
+  const [proxyTesting, setProxyTesting] = useState(false);
+  const [proxyTestResult, setProxyTestResult] = useState(null);
+
+  async function testProxy() {
+    setProxyTesting(true); setProxyTestResult(null);
+    try {
+      const r = await api.testProxy();
+      setProxyTestResult({ ok: true, ip: r.ip });
+    } catch (e) {
+      setProxyTestResult({ ok: false, msg: e.message });
+    } finally { setProxyTesting(false); }
+  }
+
+  return (
+    <Section title="VPN / Proxy">
+      <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed mb-2">
+        Route scraping through an HTTP proxy (e.g. gluetun on your Docker network).
+        Amazon Australia <strong>always</strong> requires a proxy to protect your home IP — it will not
+        scrape without one. Other stores use the proxy only when "Route all through VPN" is on.
+      </p>
+      <Field label="Proxy URL">
+        <input
+          type="url"
+          value={settings.vpn_proxy_url ?? ""}
+          onChange={(e) => set("vpn_proxy_url", e.target.value)}
+          placeholder="http://gluetun:8888"
+          className={inputCls}
+        />
+      </Field>
+      <Toggle
+        label="Route all scraping through VPN"
+        value={settings.scrape_via_vpn === "true"}
+        onChange={(v) => set("scrape_via_vpn", v ? "true" : "false")}
+      />
+      <div className="flex items-center gap-3 pt-1 flex-wrap">
+        <SaveBar keys={["vpn_proxy_url", "scrape_via_vpn"]} save={save} saving={saving} msg={saveMsg} />
+        <button onClick={testProxy} disabled={proxyTesting || !settings.vpn_proxy_url} className={btnCls}>
+          {proxyTesting ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+          Test connectivity
+        </button>
+        {proxyTestResult && (
+          proxyTestResult.ok
+            ? <span className="text-xs text-brand-600">Connected — exit IP: {proxyTestResult.ip}</span>
+            : <span className="text-xs text-red-500">{proxyTestResult.msg}</span>
+        )}
+      </div>
+    </Section>
+  );
+}
+
+function AdminEmailTab({ settings, set, save, saving, saveMsg }) {
+  const [testEmailOpen, setTestEmailOpen] = useState(false);
+  return (
+    <>
       <Section title="Email (SMTP)">
         <Field label="Host"><input type="text" value={settings.email_smtp_host ?? ""} onChange={(e) => set("email_smtp_host", e.target.value)} className={inputCls} /></Field>
         <Field label="Port"><input type="number" value={settings.email_smtp_port ?? "587"} onChange={(e) => set("email_smtp_port", e.target.value)} className={inputCls} /></Field>
@@ -574,88 +575,170 @@ function AdminTab({ settings, set, save, saving, saveMsg }) {
         </div>
       </Section>
       {testEmailOpen && <TestEmailModal onClose={() => setTestEmailOpen(false)} />}
+    </>
+  );
+}
 
-      <Section title="Drakes Store Map">
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-          Scan the Drakes website to discover online stores and update the store dropdown.
-          Only stores that respond successfully will be saved.
-        </p>
-        <button onClick={runDrakesScan} disabled={drakesScanLoading} className={btnCls}>
-          {drakesScanLoading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-          {drakesScanLoading ? "Scanning…" : "Scan Drakes stores"}
-        </button>
-        {drakesScanMsg && <p className="text-xs text-red-500 mt-2">{drakesScanMsg}</p>}
+function AdminUsersTab() {
+  const [users, setUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [newUsername, setNewUsername] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newRole, setNewRole] = useState("user");
+  const [createMsg, setCreateMsg] = useState("");
+  const [resetTarget, setResetTarget] = useState(null);
+  const [resetPw, setResetPw] = useState("");
+  const [resetMsg, setResetMsg] = useState("");
 
-        {drakesScanResults && drakesScanResults.length > 0 && (
-          <div className="mt-3 space-y-1">
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-              Found {drakesScanResults.length} stores — {drakesScanResults.filter(s => s.working).length} responding
-            </p>
-            {drakesScanResults.map((s) => (
-              <div key={s.id} className="flex items-center gap-2 py-1 border-b border-gray-100 dark:border-gray-700 last:border-0">
-                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${s.working ? "bg-green-500" : "bg-red-400"}`} />
-                <span className="text-sm text-gray-800 dark:text-gray-200 flex-1">{s.name}</span>
-                <span className="text-xs font-mono text-gray-400">{s.id}</span>
-                <a href={s.url} target="_blank" rel="noreferrer" className="text-xs text-brand-600 hover:underline shrink-0">{s.url}</a>
-              </div>
-            ))}
-            <div className="flex items-center gap-3 pt-2">
-              <button onClick={saveDrakesMap} className={btnCls}>
-                <Save size={14} /> Save working stores
+  useEffect(() => { loadUsers(); }, []);
+
+  async function loadUsers() {
+    setUsersLoading(true);
+    try { setUsers(await api.listUsers()); } finally { setUsersLoading(false); }
+  }
+
+  async function createUser(e) {
+    e.preventDefault(); setCreateMsg("");
+    try {
+      await api.createUser(newUsername, newPassword, newRole);
+      setNewUsername(""); setNewPassword(""); setNewRole("user");
+      setCreateMsg("User created");
+      setTimeout(() => setCreateMsg(""), 2000);
+      loadUsers();
+    } catch (e) { setCreateMsg(e.message); }
+  }
+
+  async function toggleActive(u) {
+    try { await api.updateUser(u.id, { is_active: !u.is_active }); loadUsers(); } catch {}
+  }
+
+  async function doDeleteUser(u) {
+    if (!window.confirm(`Delete user "${u.username}"? This will delete all their data.`)) return;
+    try { await api.deleteUser(u.id); loadUsers(); } catch {}
+  }
+
+  async function submitReset(e) {
+    e.preventDefault(); setResetMsg("");
+    try {
+      await api.resetUserPassword(resetTarget.id, resetPw);
+      setResetMsg("Password reset"); setResetPw("");
+      setTimeout(() => { setResetMsg(""); setResetTarget(null); }, 1500);
+    } catch (e) { setResetMsg(e.message); }
+  }
+
+  return (
+    <Section title="Users">
+      {usersLoading ? (
+        <Loader2 className="animate-spin text-brand-500 mx-auto" size={20} />
+      ) : (
+        <div className="space-y-2">
+          {users.map((u) => (
+            <div key={u.id} className="flex items-center gap-2 py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-0">
+              <User size={14} className="text-gray-400 shrink-0" />
+              <span className="flex-1 text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{u.username}</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${u.role === "admin" ? "bg-brand-100 text-brand-700 dark:bg-brand-900 dark:text-brand-300" : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"}`}>
+                {u.role}
+              </span>
+              {!u.is_active && <span className="text-xs text-red-400 shrink-0">disabled</span>}
+              <button onClick={() => { setResetTarget(u); setResetPw(""); setResetMsg(""); }} className="p-1 text-gray-400 hover:text-brand-600 shrink-0" title="Reset password"><KeyRound size={14} /></button>
+              <button onClick={() => toggleActive(u)} className="p-1 text-gray-400 hover:text-yellow-500 shrink-0" title={u.is_active ? "Disable" : "Enable"}>
+                {u.is_active ? <ShieldOff size={14} /> : <ShieldCheck size={14} />}
               </button>
-              {drakesSaveMsg && <span className="text-xs text-brand-600">{drakesSaveMsg}</span>}
+              <button onClick={() => doDeleteUser(u)} className="p-1 text-gray-400 hover:text-red-500 shrink-0" title="Delete"><Trash2 size={14} /></button>
             </div>
+          ))}
+        </div>
+      )}
+      {resetTarget && (
+        <form onSubmit={submitReset} className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-2">
+          <p className="text-xs font-medium text-gray-600 dark:text-gray-300">Reset password for <strong>{resetTarget.username}</strong></p>
+          <input type="password" placeholder="New password (8+ chars)" value={resetPw} onChange={(e) => setResetPw(e.target.value)} className={inputCls} required />
+          {resetMsg && <p className={`text-xs ${resetMsg === "Password reset" ? "text-brand-600" : "text-red-500"}`}>{resetMsg}</p>}
+          <div className="flex gap-2">
+            <button type="submit" className={btnCls}><KeyRound size={14} /> Reset</button>
+            <button type="button" onClick={() => setResetTarget(null)} className="text-xs text-gray-400 px-2">Cancel</button>
           </div>
-        )}
-      </Section>
-
-      <Section title="Users">
-        {usersLoading ? (
-          <Loader2 className="animate-spin text-brand-500 mx-auto" size={20} />
-        ) : (
-          <div className="space-y-2">
-            {users.map((u) => (
-              <div key={u.id} className="flex items-center gap-2 py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-0">
-                <User size={14} className="text-gray-400 shrink-0" />
-                <span className="flex-1 text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{u.username}</span>
-                <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${u.role === "admin" ? "bg-brand-100 text-brand-700 dark:bg-brand-900 dark:text-brand-300" : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"}`}>
-                  {u.role}
-                </span>
-                {!u.is_active && <span className="text-xs text-red-400 shrink-0">disabled</span>}
-                <button onClick={() => { setResetTarget(u); setResetPw(""); setResetMsg(""); }} className="p-1 text-gray-400 hover:text-brand-600 shrink-0" title="Reset password"><KeyRound size={14} /></button>
-                <button onClick={() => toggleActive(u)} className="p-1 text-gray-400 hover:text-yellow-500 shrink-0" title={u.is_active ? "Disable" : "Enable"}>
-                  {u.is_active ? <ShieldOff size={14} /> : <ShieldCheck size={14} />}
-                </button>
-                <button onClick={() => doDeleteUser(u)} className="p-1 text-gray-400 hover:text-red-500 shrink-0" title="Delete"><Trash2 size={14} /></button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {resetTarget && (
-          <form onSubmit={submitReset} className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-2">
-            <p className="text-xs font-medium text-gray-600 dark:text-gray-300">Reset password for <strong>{resetTarget.username}</strong></p>
-            <input type="password" placeholder="New password (8+ chars)" value={resetPw} onChange={(e) => setResetPw(e.target.value)} className={inputCls} required />
-            {resetMsg && <p className={`text-xs ${resetMsg === "Password reset" ? "text-brand-600" : "text-red-500"}`}>{resetMsg}</p>}
-            <div className="flex gap-2">
-              <button type="submit" className={btnCls}><KeyRound size={14} /> Reset</button>
-              <button type="button" onClick={() => setResetTarget(null)} className="text-xs text-gray-400 px-2">Cancel</button>
-            </div>
-          </form>
-        )}
-
-        <form onSubmit={createUser} className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-2">
-          <p className="text-xs font-medium text-gray-600 dark:text-gray-300">New user</p>
-          <input type="text" placeholder="Username" value={newUsername} onChange={(e) => setNewUsername(e.target.value)} className={inputCls} required />
-          <input type="password" placeholder="Password (8+ chars)" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className={inputCls} required />
-          <select value={newRole} onChange={(e) => setNewRole(e.target.value)} className={inputCls}>
-            <option value="user">user</option>
-            <option value="admin">admin</option>
-          </select>
-          {createMsg && <p className={`text-xs ${createMsg === "User created" ? "text-brand-600" : "text-red-500"}`}>{createMsg}</p>}
-          <button type="submit" className={btnCls}><UserPlus size={14} /> Create user</button>
         </form>
-      </Section>
+      )}
+      <form onSubmit={createUser} className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-2">
+        <p className="text-xs font-medium text-gray-600 dark:text-gray-300">New user</p>
+        <input type="text" placeholder="Username" value={newUsername} onChange={(e) => setNewUsername(e.target.value)} className={inputCls} required />
+        <input type="password" placeholder="Password (8+ chars)" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className={inputCls} required />
+        <select value={newRole} onChange={(e) => setNewRole(e.target.value)} className={inputCls}>
+          <option value="user">user</option>
+          <option value="admin">admin</option>
+        </select>
+        {createMsg && <p className={`text-xs ${createMsg === "User created" ? "text-brand-600" : "text-red-500"}`}>{createMsg}</p>}
+        <button type="submit" className={btnCls}><UserPlus size={14} /> Create user</button>
+      </form>
+    </Section>
+  );
+}
+
+function AdminLogsTab() {
+  const [logs, setLogs] = useState([]);
+  const [paused, setPaused] = useState(false);
+  const bottomRef = useRef(null);
+  const pausedRef = useRef(false);
+
+  pausedRef.current = paused;
+
+  useEffect(() => {
+    const token = getToken();
+    const es = new EventSource(`/api/admin/logs/stream?token=${encodeURIComponent(token)}`);
+    es.onmessage = (e) => {
+      if (pausedRef.current) return;
+      try {
+        const line = JSON.parse(e.data);
+        setLogs((prev) => {
+          const next = [...prev, line];
+          return next.length > 300 ? next.slice(-300) : next;
+        });
+      } catch {}
+    };
+    es.onerror = () => es.close();
+    return () => es.close();
+  }, []);
+
+  useEffect(() => {
+    if (!paused) bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [logs, paused]);
+
+  function levelColor(line) {
+    if (line.includes(" ERROR "))    return "text-red-400";
+    if (line.includes(" WARNING "))  return "text-yellow-400";
+    if (line.includes(" INFO "))     return "text-gray-300";
+    return "text-gray-500";
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-gray-500 dark:text-gray-400">{logs.length} lines</span>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setPaused((p) => !p)}
+            className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition-colors ${paused ? "border-brand-500 text-brand-600 bg-brand-50 dark:bg-brand-950" : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+          >
+            {paused ? "Resume" : "Pause"}
+          </button>
+          <button
+            onClick={() => setLogs([])}
+            className="text-xs px-2.5 py-1 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors flex items-center gap-1"
+          >
+            <Trash size={11} /> Clear
+          </button>
+        </div>
+      </div>
+      <div className="font-mono text-xs bg-gray-950 rounded-xl p-3 h-[26rem] overflow-y-auto space-y-0.5">
+        {logs.length === 0 && (
+          <span className="text-gray-600">Waiting for log output…</span>
+        )}
+        {logs.map((line, i) => (
+          <div key={i} className={`leading-5 whitespace-pre-wrap break-all ${levelColor(line)}`}>{line}</div>
+        ))}
+        <div ref={bottomRef} />
+      </div>
     </div>
   );
 }

@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented here.
 
+## [0.3.4] - 2026-06-23
+### Added
+- Admin settings now has sub-tabs (General, Network, Email, Users, Logs) to reduce clutter
+- Logs tab streams real-time backend logs with timestamps and colour-coded severity; supports pause and clear
+
 ## [0.3.3] - 2026-06-23
 ### Fixed
 - "Route all scraping through VPN" toggle now persists across page refreshes — stale per-user setting rows were shadowing the global value in the API response
