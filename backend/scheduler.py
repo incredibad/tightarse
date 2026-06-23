@@ -1,8 +1,8 @@
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, date
 
-from datetime import date
+import httpx
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
@@ -167,8 +167,6 @@ async def _scrape_url_group(url: str, product_ids: list[int]) -> tuple[int, int]
 
 
 async def _check_and_record_vpn_ip(proxy_url: str):
-    """Hit ipinfo.io via the proxy and persist the exit IP if it's changed."""
-    import httpx
     try:
         async with httpx.AsyncClient(proxy=proxy_url, timeout=10.0) as client:
             r = await client.get("https://ipinfo.io/json")
