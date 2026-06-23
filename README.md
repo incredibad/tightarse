@@ -26,7 +26,6 @@ A self-hosted grocery price tracker and shopping assistant. Add items to your li
 ### Shopping List
 - **Multi-store price tracking** — Track the same item across Woolworths, Coles, ALDI, Drakes, and Amazon AU
 - **Paste a URL to add a product** — Supports direct product URLs or in-store search for supported stores
-- **Price history** — Tracks price over time per product
 - **Special / sale detection** — Highlights on-special prices and shows the previous was-price
 - **Cup price (unit price)** — Shows price per 100g, per litre, etc. for easy comparison
 - **Out of stock tracking** — Products are marked out of stock when no longer available; the item's cheapest in-stock alternative is used instead
