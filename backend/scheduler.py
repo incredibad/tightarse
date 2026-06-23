@@ -31,23 +31,23 @@ async def _scrape_product_inner(product_id: int) -> bool:
         if not product or not product.store or not product.store.enabled:
             return False
         url = product.url
+        product_name = product.name or f"#{product_id}"
         scraper_module = product.store.scraper_module
         proxy = _resolve_proxy(db, scraper_module)
     finally:
         db.close()
 
-    if proxy:
-        logger.info(f"Scraping {url} via proxy {proxy}")
+    logger.info(f"Scraping [{product_name}] {url}{' via proxy' if proxy else ''}")
     try:
         scraper = get_scraper(scraper_module, proxy_url=proxy)
     except ValueError as e:
-        logger.warning(f"Cannot scrape product {product_id}: {e}")
+        logger.warning(f"Cannot scrape [{product_name}]: {e}")
         return False
     try:
         result = await scraper.scrape_url(url)
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 404:
-            logger.warning(f"Product {product_id} returned 404 — marking out of stock")
+            logger.warning(f"[{product_name}] 404 — marking out of stock")
             db = SessionLocal()
             try:
                 product = db.query(Product).filter(Product.id == product_id).first()
@@ -58,10 +58,10 @@ async def _scrape_product_inner(product_id: int) -> bool:
             finally:
                 db.close()
         else:
-            logger.warning(f"Scrape failed for product {product_id}: {e}")
+            logger.warning(f"[{product_name}] scrape failed: {e}")
         return False
     except Exception as e:
-        logger.warning(f"Scrape failed for product {product_id}: {e}")
+        logger.warning(f"[{product_name}] scrape failed: {e}")
         return False
     finally:
         await scraper.close()
@@ -114,22 +114,22 @@ async def _scrape_url_group(url: str, product_ids: list[int]) -> tuple[int, int]
             if not products:
                 return 0, len(product_ids)
             scraper_module = products[0].store.scraper_module
+            product_names = ", ".join(p.name or f"#{p.id}" for p in products)
             proxy = _resolve_proxy(db, scraper_module)
         finally:
             db.close()
 
-        if proxy:
-            logger.info(f"Scraping {url} via proxy {proxy}")
+        logger.info(f"Scraping [{product_names}] {url}{' via proxy' if proxy else ''}")
         try:
             scraper = get_scraper(scraper_module, proxy_url=proxy)
         except ValueError as e:
-            logger.warning(f"Cannot scrape {url}: {e}")
+            logger.warning(f"[{product_names}] cannot scrape: {e}")
             return 0, len(product_ids)
         try:
             result = await scraper.scrape_url(url)
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
-                logger.warning(f"{url} returned 404 — marking {len(product_ids)} product(s) out of stock")
+                logger.warning(f"[{product_names}] 404 — marking out of stock")
                 db = SessionLocal()
                 try:
                     now = datetime.utcnow()
@@ -142,10 +142,10 @@ async def _scrape_url_group(url: str, product_ids: list[int]) -> tuple[int, int]
                 finally:
                     db.close()
             else:
-                logger.warning(f"Scrape failed for {url}: {e}")
+                logger.warning(f"[{product_names}] scrape failed: {e}")
             return 0, len(product_ids)
         except Exception as e:
-            logger.warning(f"Scrape failed for {url}: {e}")
+            logger.warning(f"[{product_names}] scrape failed: {e}")
             return 0, len(product_ids)
         finally:
             await scraper.close()
