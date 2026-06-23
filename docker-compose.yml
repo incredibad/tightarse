@@ -1,4 +1,18 @@
 services:
+  gluetun:
+    image: qmcgaw/gluetun
+    cap_add:
+      - NET_ADMIN
+    env_file:
+      - .env
+    environment:
+      - VPN_SERVICE_PROVIDER=privado
+      - SERVER_COUNTRIES=Australia
+      - HTTPPROXY=on
+    ports:
+      - "8888:8888"
+    restart: unless-stopped
+
   backend:
     build:
       context: .

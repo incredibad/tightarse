@@ -241,6 +241,7 @@ def _seed_stores():
             Store(name="Coles", base_url="https://www.coles.com.au", scraper_module="coles"),
             Store(name="ALDI", base_url="https://www.aldi.com.au", scraper_module="aldi"),
             Store(name="Drakes", base_url="https://drakes.com.au", scraper_module="drakes"),
+            Store(name="Amazon Australia", base_url="https://www.amazon.com.au", scraper_module="amazon"),
         ]
         for store in stores:
             existing = db.query(Store).filter(Store.name == store.name).first()
@@ -261,6 +262,8 @@ def _seed_default_settings():
         "email_smtp_user": "",
         "email_smtp_password": "",
         "email_from": "",
+        "vpn_proxy_url": "",
+        "scrape_via_vpn": "false",
     }
     try:
         for key, value in global_defaults.items():
@@ -295,6 +298,8 @@ GLOBAL_SETTING_KEYS = {
     "email_smtp_password",
     "email_from",
     "drakes_store_map",
+    "vpn_proxy_url",
+    "scrape_via_vpn",
 }
 
 
@@ -326,3 +331,15 @@ def get_user_setting(db, user_id: int, key: str) -> str | None:
         UserSetting.user_id == user_id, UserSetting.key == key
     ).first()
     return row.value if row else USER_SETTING_DEFAULTS.get(key)
+
+
+def get_global_setting(db, key: str) -> str:
+    row = db.query(Setting).filter(Setting.key == key).first()
+    if row:
+        return row.value or ""
+    # Fall back to seed defaults
+    defaults = {
+        "vpn_proxy_url": "",
+        "scrape_via_vpn": "false",
+    }
+    return defaults.get(key, "")

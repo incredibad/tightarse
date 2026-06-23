@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from urllib.parse import urlparse
-from database import get_db, Product, Store, PriceHistory, Item, get_user_setting
+from database import get_db, Product, Store, PriceHistory, Item, get_user_setting, get_global_setting
 from auth import require_auth, require_admin, User
 from scrapers import get_scraper
 import scheduler as sched
@@ -127,7 +127,10 @@ async def preview_url(payload: dict, _user: User = Depends(require_auth), db: Se
     if not store:
         raise HTTPException(status_code=400, detail="Unrecognised store URL")
 
-    scraper = get_scraper(store.scraper_module)
+    try:
+        scraper = get_scraper(store.scraper_module, **_scraper_kwargs(db, _user.id, store))
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     try:
         result = await scraper.scrape_url(url)
     except Exception as e:
@@ -160,11 +163,10 @@ async def search_store(payload: dict, current_user: User = Depends(require_auth)
     if not store:
         raise HTTPException(status_code=404, detail="Store not found or disabled")
 
-    kwargs = {}
-    if store.scraper_module == "drakes":
-        kwargs["store_id"] = get_user_setting(db, current_user.id, "drakes_store_id") or "087"
-
-    scraper = get_scraper(store.scraper_module, **kwargs)
+    try:
+        scraper = get_scraper(store.scraper_module, **_scraper_kwargs(db, current_user.id, store))
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     try:
         results = await scraper.search(query)
     except Exception as e:
@@ -266,3 +268,18 @@ def _enrich(p: Product) -> ProductOut:
     out = ProductOut.model_validate(p)
     out.store_name = p.store.name if p.store else None
     return out
+
+
+def _resolve_proxy(db: Session, scraper_module: str) -> str:
+    proxy_url = get_global_setting(db, "vpn_proxy_url")
+    via_vpn = get_global_setting(db, "scrape_via_vpn") == "true"
+    if scraper_module == "amazon" or via_vpn:
+        return proxy_url
+    return ""
+
+
+def _scraper_kwargs(db: Session, user_id: int, store: Store) -> dict:
+    kwargs: dict = {"proxy_url": _resolve_proxy(db, store.scraper_module)}
+    if store.scraper_module == "drakes":
+        kwargs["store_id"] = get_user_setting(db, user_id, "drakes_store_id") or "087"
+    return kwargs

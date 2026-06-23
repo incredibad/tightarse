@@ -310,6 +310,10 @@ export default function AddProduct() {
 
       {/* URL section */}
       {addMode === "url" && <div className="space-y-2">
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          Supported:{" "}
+          {stores.filter((s) => s.enabled !== false && s.available !== false).map((s) => s.name).join(", ") || "No stores enabled"}
+        </p>
         <div className="flex gap-2">
           <input
             value={urlInput}

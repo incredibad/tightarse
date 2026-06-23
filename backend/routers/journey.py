@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from auth import require_auth, User
-from database import get_db, Item, Product, get_user_setting
+from database import get_db, Item, Product, get_user_setting, get_global_setting
 
 
 def _comparable_price(product) -> float:
@@ -68,6 +68,7 @@ def get_journey(current_user: User = Depends(require_auth), db: Session = Depend
     """Calculate the cheapest basket by grouping cheapest products per item by store."""
     items = db.query(Item).filter(Item.user_id == current_user.id).all()
     store_priority = _user_store_priority(db, current_user.id)
+    vpn_proxy_url = get_global_setting(db, "vpn_proxy_url")
 
     all_journey_items: list[JourneyItem] = []
     estimated_total = 0.0
@@ -79,6 +80,7 @@ def get_journey(current_user: User = Depends(require_auth), db: Session = Depend
             and p.in_stock is not False
             and p.current_price is not None
             and _store_enabled_for_user(db, current_user.id, p.store_id)
+            and _store_available(p.store, vpn_proxy_url)
         ]
         if not active_products:
             continue
@@ -137,6 +139,12 @@ def get_journey(current_user: User = Depends(require_auth), db: Session = Depend
         stores=stores,
         estimated_total=round(estimated_total, 2),
     )
+
+
+def _store_available(store, vpn_proxy_url: str) -> bool:
+    if store and store.scraper_module == "amazon":
+        return bool(vpn_proxy_url)
+    return True
 
 
 def _store_enabled_for_user(db, user_id: int, store_id: int) -> bool:

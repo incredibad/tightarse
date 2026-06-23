@@ -5,7 +5,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy.orm import Session
 
-from database import SessionLocal, Product, Store, PriceHistory, Notification, Setting, get_user_setting
+from database import SessionLocal, Product, Store, PriceHistory, Notification, Setting, get_user_setting, get_global_setting
 from scrapers import get_scraper
 from notifications import send_price_drop_notification
 
@@ -21,7 +21,14 @@ async def scrape_product(product_id: int):
         if not product or not product.store or not product.store.enabled:
             return
 
-        scraper = get_scraper(product.store.scraper_module)
+        proxy = _resolve_proxy(db, product.store.scraper_module)
+        if proxy:
+            logger.info(f"Scraping {product.url} via proxy {proxy}")
+        try:
+            scraper = get_scraper(product.store.scraper_module, proxy_url=proxy)
+        except ValueError as e:
+            logger.warning(f"Cannot scrape product {product_id}: {e}")
+            return
         try:
             result = await scraper.scrape_url(product.url)
         except Exception as e:
@@ -88,7 +95,15 @@ async def scrape_all_active_products():
             products = db.query(Product).filter(Product.id.in_(product_ids), Product.active == True).all()
             if not products:
                 continue
-            scraper = get_scraper(products[0].store.scraper_module)
+            store = products[0].store
+            proxy = _resolve_proxy(db, store.scraper_module)
+            if proxy:
+                logger.info(f"Scraping {url} via proxy {proxy}")
+            try:
+                scraper = get_scraper(store.scraper_module, proxy_url=proxy)
+            except ValueError as e:
+                logger.warning(f"Cannot scrape {url}: {e}")
+                continue
             try:
                 result = await scraper.scrape_url(url)
             except Exception as e:
@@ -105,6 +120,14 @@ async def scrape_all_active_products():
             db.rollback()
         finally:
             db.close()
+
+
+def _resolve_proxy(db: Session, scraper_module: str) -> str:
+    proxy_url = get_global_setting(db, "vpn_proxy_url")
+    via_vpn = get_global_setting(db, "scrape_via_vpn") == "true"
+    if scraper_module == "amazon" or via_vpn:
+        return proxy_url
+    return ""
 
 
 async def _maybe_notify_price_drop(db: Session, product, old_price: float, new_price: float):

@@ -330,7 +330,7 @@ function StoresTab() {
         </p>
         {saving && <p className="text-xs text-brand-500">Saving…</p>}
         <div className="space-y-0 pt-1">
-          {stores.map((store, i) => (
+          {stores.filter((s) => s.available !== false).map((store, i) => (
             <div key={store.id} className="border-b border-gray-100 dark:border-gray-700 last:border-0">
               <div className="flex items-center gap-2 py-1.5">
                 <div className="flex flex-col gap-0.5 shrink-0">
@@ -366,6 +366,7 @@ function StoresTab() {
           ))}
         </div>
       </div>
+
     </div>
   );
 }
@@ -389,12 +390,27 @@ function AdminTab({ settings, set, save, saving, saveMsg }) {
   const [resetTarget, setResetTarget] = useState(null);
   const [resetPw, setResetPw] = useState("");
   const [resetMsg, setResetMsg] = useState("");
+  const [proxyTesting, setProxyTesting] = useState(false);
+  const [proxyTestResult, setProxyTestResult] = useState(null);
 
   useEffect(() => { loadUsers(); }, []);
 
   async function loadUsers() {
     setUsersLoading(true);
     try { setUsers(await api.listUsers()); } finally { setUsersLoading(false); }
+  }
+
+  async function testProxy() {
+    setProxyTesting(true);
+    setProxyTestResult(null);
+    try {
+      const r = await api.testProxy();
+      setProxyTestResult({ ok: true, ip: r.ip });
+    } catch (e) {
+      setProxyTestResult({ ok: false, msg: e.message });
+    } finally {
+      setProxyTesting(false);
+    }
   }
 
   async function triggerScrape() {
@@ -492,6 +508,44 @@ function AdminTab({ settings, set, save, saving, saveMsg }) {
           Check all prices now
         </button>
         {scrapeMsg && <p className="text-xs text-brand-600 mt-1">{scrapeMsg}</p>}
+      </Section>
+
+      <Section title="VPN / Proxy">
+        <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed mb-2">
+          Route scraping through an HTTP proxy (e.g. gluetun on your Docker network).
+          Amazon Australia <strong>always</strong> requires a proxy to protect your home IP — it will not
+          scrape without one. Other stores use the proxy only when "Route all through VPN" is on.
+        </p>
+        <Field label="Proxy URL">
+          <input
+            type="url"
+            value={settings.vpn_proxy_url ?? ""}
+            onChange={(e) => set("vpn_proxy_url", e.target.value)}
+            placeholder="http://gluetun:8888"
+            className={inputCls}
+          />
+        </Field>
+        <Toggle
+          label="Route all scraping through VPN"
+          value={settings.scrape_via_vpn === "true"}
+          onChange={(v) => set("scrape_via_vpn", v ? "true" : "false")}
+        />
+        <div className="flex items-center gap-3 pt-1 flex-wrap">
+          <SaveBar keys={["vpn_proxy_url", "scrape_via_vpn"]} save={save} saving={saving} msg={saveMsg} />
+          <button
+            onClick={testProxy}
+            disabled={proxyTesting || !settings.vpn_proxy_url}
+            className={btnCls}
+          >
+            {proxyTesting ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+            Test connectivity
+          </button>
+          {proxyTestResult && (
+            proxyTestResult.ok
+              ? <span className="text-xs text-brand-600">Connected — exit IP: {proxyTestResult.ip}</span>
+              : <span className="text-xs text-red-500">{proxyTestResult.msg}</span>
+          )}
+        </div>
       </Section>
 
       <Section title="Email (SMTP)">

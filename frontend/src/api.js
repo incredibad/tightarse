@@ -101,4 +101,5 @@ export const api = {
   getSettings: () => request("/settings/"),
   updateSettings: (settings) => request("/settings/", { method: "PUT", body: { settings } }),
   testEmail: (to) => request("/settings/test-email", { method: "POST", body: { to } }),
+  testProxy: () => request("/settings/test-proxy", { method: "POST" }),
 };

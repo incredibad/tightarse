@@ -54,8 +54,8 @@ def _extract_cup_price(soup: BeautifulSoup) -> tuple[float | None, str | None]:
 class DrakesScraper(BaseScraper):
     store_name = "Drakes"
 
-    def __init__(self, store_id: str = "087"):
-        super().__init__()
+    def __init__(self, store_id: str = "087", proxy_url: str = ""):
+        super().__init__(proxy_url=proxy_url)
         self.store_id = store_id
 
     def _base(self, store_id: str | None = None) -> str:
