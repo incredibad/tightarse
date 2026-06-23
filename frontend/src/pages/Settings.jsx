@@ -468,7 +468,7 @@ function AdminGeneralTab({ settings, set, save, saving, saveMsg }) {
 
   return (
     <div className="space-y-4">
-      <Section title="Scraping">
+      <Section title="Scraping" description="Automatically checks prices across all your tracked products on the schedule below. You can also trigger an immediate check at any time.">
         {(() => {
           const scheduleKeys = ["scrape_schedule_type", "scrape_schedule_time", "scrape_schedule_day"];
           const type = settings.scrape_schedule_type ?? "6h";
@@ -506,7 +506,7 @@ function AdminGeneralTab({ settings, set, save, saving, saveMsg }) {
               {saveMsg && <span className={`text-xs ${saveMsg === "Saved" ? "text-brand-600" : "text-red-500"}`}>{saveMsg}</span>}
               <button onClick={triggerScrape} disabled={scraping} className={btnCls}>
                 {scraping ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                Check all now
+                Run now
               </button>
               {scrapeMsg && <span className="text-xs text-brand-600">{scrapeMsg}</span>}
             </div>
@@ -914,10 +914,13 @@ function TestEmailModal({ onClose }) {
 
 // ── Shared components ─────────────────────────────────────────────────────────
 
-function Section({ title, children }) {
+function Section({ title, description, children }) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
-      <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400">{title}</h2>
+      <div>
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400">{title}</h2>
+        {description && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{description}</p>}
+      </div>
       {children}
     </div>
   );
