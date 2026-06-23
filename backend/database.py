@@ -161,6 +161,24 @@ class VpnCheckHistory(Base):
     checked_at = Column(DateTime, default=datetime.utcnow)
 
 
+def record_vpn_ip(db, ip: str, org=None, city=None, country=None) -> bool:
+    """Insert a VPN check only when the exit IP differs from the most recent entry. Returns True if inserted."""
+    last = db.query(VpnCheckHistory).order_by(VpnCheckHistory.checked_at.desc()).first()
+    if last and last.ip == ip:
+        return False
+    db.add(VpnCheckHistory(ip=ip, org=org, city=city, country=country, checked_at=datetime.utcnow()))
+    db.commit()
+    oldest_ids = [
+        row.id for row in db.query(VpnCheckHistory.id)
+        .order_by(VpnCheckHistory.checked_at.desc())
+        .offset(200).all()
+    ]
+    if oldest_ids:
+        db.query(VpnCheckHistory).filter(VpnCheckHistory.id.in_(oldest_ids)).delete(synchronize_session=False)
+        db.commit()
+    return True
+
+
 def get_db():
     db = SessionLocal()
     try:

@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from database import get_db, SessionLocal, Setting, UserSetting, Product, VpnCheckHistory, GLOBAL_SETTING_KEYS, USER_SETTING_DEFAULTS, get_global_setting
+from database import get_db, SessionLocal, Setting, UserSetting, Product, VpnCheckHistory, GLOBAL_SETTING_KEYS, USER_SETTING_DEFAULTS, get_global_setting, record_vpn_ip
 from auth import require_auth, require_admin, User
 import scheduler as sched
 
@@ -193,18 +193,7 @@ async def test_proxy(_admin: User = Depends(require_admin), db: Session = Depend
 
     db2 = SessionLocal()
     try:
-        from datetime import datetime
-        db2.add(VpnCheckHistory(ip=ip, org=org, city=city, country=country, checked_at=datetime.utcnow()))
-        db2.commit()
-        # Prune to 200 most recent
-        oldest_ids = [
-            row.id for row in db2.query(VpnCheckHistory.id)
-            .order_by(VpnCheckHistory.checked_at.desc())
-            .offset(200).all()
-        ]
-        if oldest_ids:
-            db2.query(VpnCheckHistory).filter(VpnCheckHistory.id.in_(oldest_ids)).delete(synchronize_session=False)
-            db2.commit()
+        record_vpn_ip(db2, ip, org, city, country)
     finally:
         db2.close()
 
