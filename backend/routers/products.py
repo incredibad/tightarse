@@ -10,9 +10,8 @@ from auth import require_auth, require_admin, User
 from scrapers import get_scraper
 import scheduler as sched
 
-async def _scrape_limited(product_id: int):
-    # sched.scrape_product already acquires _SCRAPE_SEM (shared with scheduler)
-    await sched.scrape_product(product_id)
+async def _scrape_limited(product_id: int) -> bool:
+    return await sched.scrape_product(product_id)
 
 router = APIRouter(prefix="/products", tags=["products"])
 
