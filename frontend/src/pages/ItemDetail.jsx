@@ -119,7 +119,14 @@ export default function ItemDetail() {
     ? Math.min(...activeProducts.filter((p) => _comparablePrice(p) != null).map(_comparablePrice))
     : null;
 
+  const _sortKey = (p) => {
+    if (!p.active) return 2;
+    if (p.in_stock === false) return 1;
+    return 0;
+  };
   const sorted = [...products].sort((a, b) => {
+    const ka = _sortKey(a), kb = _sortKey(b);
+    if (ka !== kb) return ka - kb;
     const ca = _comparablePrice(a);
     const cb = _comparablePrice(b);
     if (ca == null && cb == null) return 0;
