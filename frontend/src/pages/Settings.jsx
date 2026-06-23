@@ -475,10 +475,14 @@ function AdminGeneralTab({ settings, set, save, saving, saveMsg }) {
             type="number" min="1" max="168"
             value={settings.scrape_interval_hours ?? "6"}
             onChange={(e) => set("scrape_interval_hours", e.target.value)}
-            className={`${inputCls} w-20`}
+            className="w-16 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
           <span className="text-sm text-gray-600 dark:text-gray-400">hours</span>
-          <SaveBar keys={["scrape_interval_hours"]} save={save} saving={saving} msg={saveMsg} />
+          <button onClick={() => save(["scrape_interval_hours"])} disabled={saving} className={btnCls}>
+            {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+            Save
+          </button>
+          {saveMsg && <span className={`text-xs ${saveMsg === "Saved" ? "text-brand-600" : "text-red-500"}`}>{saveMsg}</span>}
           <button onClick={triggerScrape} disabled={scraping} className={btnCls}>
             {scraping ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
             Check all now
