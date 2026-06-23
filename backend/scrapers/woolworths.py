@@ -51,8 +51,8 @@ def _multibuy(product: dict) -> dict:
 class WoolworthsScraper(BaseScraper):
     store_name = "Woolworths"
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, proxy_url: str = ""):
+        super().__init__(proxy_url=proxy_url)
         self._cookie_jar = tempfile.mktemp(suffix="_ww.txt")
         self._session_ready = False
 

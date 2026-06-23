@@ -2,6 +2,7 @@ from .woolworths import WoolworthsScraper
 from .coles import ColesScraper
 from .aldi import ALDIScraper
 from .drakes import DrakesScraper
+from .amazon import AmazonScraper
 from .base import BaseScraper, ScrapeResult
 
 SCRAPERS: dict[str, type[BaseScraper]] = {
@@ -9,6 +10,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
     "coles": ColesScraper,
     "aldi": ALDIScraper,
     "drakes": DrakesScraper,
+    "amazon": AmazonScraper,
 }
 
 SEARCH_SUPPORTED: set[str] = {"woolworths", "coles", "aldi", "drakes"}

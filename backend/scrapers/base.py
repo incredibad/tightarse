@@ -26,7 +26,7 @@ class BaseScraper(ABC):
 
     store_name: str = ""
 
-    def __init__(self):
+    def __init__(self, proxy_url: str = ""):
         self.client = httpx.AsyncClient(
             timeout=15.0,
             headers={
@@ -38,6 +38,7 @@ class BaseScraper(ABC):
                 "Accept-Language": "en-AU,en;q=0.9",
             },
             follow_redirects=True,
+            **({"proxy": proxy_url} if proxy_url else {}),
         )
 
     @abstractmethod

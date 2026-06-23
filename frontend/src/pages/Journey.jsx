@@ -81,7 +81,7 @@ export default function Journey() {
             className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 active:opacity-70 transition-opacity"
           >
             <div className="flex items-center gap-2">
-              <StorePill name={store.store_name} />
+              <StorePill name={store.store_name} long />
               {isCollapsed && <span className="text-xs text-gray-400">{store.items.length} item{store.items.length !== 1 ? "s" : ""}</span>}
             </div>
             <div className="flex items-center gap-2">

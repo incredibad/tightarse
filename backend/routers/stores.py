@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from database import get_db, Store, Setting
+from database import get_db, Store, Setting, get_global_setting
 from auth import require_auth, require_admin, User
 from scrapers import supports_search
 
@@ -33,23 +33,26 @@ class StoreOut(BaseModel):
     supports_search: bool = False
     enabled: bool = True
     priority: int = 0
+    available: bool = True
 
     class Config:
         from_attributes = True
 
 
-def _enrich_store(s: Store) -> StoreOut:
+def _enrich_store(s: Store, vpn_proxy_url: str = "") -> StoreOut:
     out = StoreOut.model_validate(s)
     out.supports_search = supports_search(s.scraper_module)
     out.enabled = bool(s.enabled) if s.enabled is not None else True
     out.priority = s.priority if s.priority is not None else 0
+    out.available = not (s.scraper_module == "amazon" and not vpn_proxy_url)
     return out
 
 
 @router.get("/", response_model=list[StoreOut])
 def list_stores(_user: User = Depends(require_auth), db: Session = Depends(get_db)):
     stores = db.query(Store).order_by(Store.priority, Store.name).all()
-    return [_enrich_store(s) for s in stores]
+    vpn_proxy_url = get_global_setting(db, "vpn_proxy_url")
+    return [_enrich_store(s, vpn_proxy_url) for s in stores]
 
 
 @router.patch("/{store_id}", response_model=StoreOut)

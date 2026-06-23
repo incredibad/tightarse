@@ -1,11 +1,12 @@
 import smtplib
 from email.mime.text import MIMEText
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from database import get_db, Setting, UserSetting, Product, GLOBAL_SETTING_KEYS, USER_SETTING_DEFAULTS
+from database import get_db, Setting, UserSetting, Product, GLOBAL_SETTING_KEYS, USER_SETTING_DEFAULTS, get_global_setting
 from auth import require_auth, require_admin, User
 import scheduler as sched
 
@@ -164,3 +165,18 @@ def test_email(
             smtp.sendmail(smtp_user, [payload.to], msg.as_string())
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"SMTP error: {e}")
+
+
+@router.post("/test-proxy")
+async def test_proxy(_admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    proxy_url = get_global_setting(db, "vpn_proxy_url")
+    if not proxy_url:
+        raise HTTPException(status_code=400, detail="No proxy URL configured")
+    try:
+        async with httpx.AsyncClient(proxy=proxy_url, timeout=10.0) as client:
+            r = await client.get("https://api.ipify.org?format=json")
+            r.raise_for_status()
+            ip = r.json().get("ip", "unknown")
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Proxy test failed: {e}")
+    return {"ip": ip}
