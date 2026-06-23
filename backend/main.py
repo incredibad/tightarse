@@ -1,13 +1,18 @@
 import logging
+import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from database import init_db, SessionLocal, Setting
 from routers import items, products, journey, settings, stores, checklist
 from routers import auth as auth_router
 import scheduler as sched
+
+FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "frontend")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -45,15 +50,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth_router.router)
-app.include_router(items.router)
-app.include_router(products.router)
-app.include_router(journey.router)
-app.include_router(settings.router)
-app.include_router(stores.router)
-app.include_router(checklist.router)
+api = APIRouter(prefix="/api")
+api.include_router(auth_router.router)
+api.include_router(items.router)
+api.include_router(products.router)
+api.include_router(journey.router)
+api.include_router(settings.router)
+api.include_router(stores.router)
+api.include_router(checklist.router)
+app.include_router(api)
 
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+# Serve frontend static files if built into the image
+if os.path.isdir(FRONTEND_DIR):
+    app.mount("/assets", StaticFiles(directory=os.path.join(FRONTEND_DIR, "assets")), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def spa(full_path: str):
+        return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
