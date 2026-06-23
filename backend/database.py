@@ -118,6 +118,20 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     settings = relationship("UserSetting", back_populates="user", cascade="all, delete-orphan")
+    checklist_items = relationship("ChecklistItem", back_populates="user", cascade="all, delete-orphan")
+
+
+class ChecklistItem(Base):
+    __tablename__ = "checklist_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    name = Column(String, nullable=False)
+    checked = Column(Boolean, default=False, nullable=False)
+    position = Column(Integer, default=0, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="checklist_items")
 
 
 class UserSetting(Base):
@@ -176,6 +190,7 @@ def _migrate_db():
         "DROP INDEX IF EXISTS ix_products_url",
         # clean up leftover tables from previous migration attempts
         "DROP TABLE IF EXISTS products_new",
+        "CREATE TABLE IF NOT EXISTS checklist_items (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, name TEXT NOT NULL, checked INTEGER NOT NULL DEFAULT 0, position INTEGER NOT NULL DEFAULT 0, created_at TEXT)",
     ]
     with engine.connect() as conn:
         for sql in migrations:

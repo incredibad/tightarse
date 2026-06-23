@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import init_db, SessionLocal, Setting
-from routers import items, products, journey, settings, stores
+from routers import items, products, journey, settings, stores, checklist
 from routers import auth as auth_router
 import scheduler as sched
 
@@ -51,6 +51,7 @@ app.include_router(products.router)
 app.include_router(journey.router)
 app.include_router(settings.router)
 app.include_router(stores.router)
+app.include_router(checklist.router)
 
 
 @app.get("/health")

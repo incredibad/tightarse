@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Routes, Route, NavLink } from "react-router-dom";
-import { List, Settings, Map, Loader2, CircleDollarSign, X, TriangleAlert } from "lucide-react";
+import { List, Settings, Map, Loader2, CircleDollarSign, X, TriangleAlert, CheckSquare } from "lucide-react";
 import { api, clearToken, setUser, getUser } from "./api";
 import Setup from "./pages/Setup";
 import Login from "./pages/Login";
@@ -8,6 +8,7 @@ import ShoppingList from "./pages/ShoppingList";
 import ItemDetail from "./pages/ItemDetail";
 import AddProduct from "./pages/AddProduct";
 import Journey from "./pages/Journey";
+import Checklist from "./pages/Checklist";
 import SettingsPage from "./pages/Settings";
 
 function DrakesStoreWarning() {
@@ -158,6 +159,7 @@ export default function App() {
         <div className="max-w-2xl mx-auto">
           <Routes>
             <Route path="/" element={<ShoppingList />} />
+            <Route path="/checklist" element={<Checklist />} />
             <Route path="/items/:itemId" element={<ItemDetail />} />
             <Route path="/items/:itemId/add-product" element={<AddProduct />} />
             <Route path="/journey" element={<Journey />} />
@@ -170,6 +172,7 @@ export default function App() {
 
       <nav className="fixed bottom-0 w-full bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
         <div className="max-w-2xl mx-auto flex justify-around">
+          <NavItem to="/checklist" icon={CheckSquare} label="Checklist" />
           <NavItem to="/" icon={List} label="List" />
           <NavItem to="/journey" icon={Map} label="Journey" />
           <NavItem to="/settings" icon={Settings} label="Settings" />

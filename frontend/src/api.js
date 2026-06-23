@@ -102,4 +102,11 @@ export const api = {
   updateSettings: (settings) => request("/settings/", { method: "PUT", body: { settings } }),
   testEmail: (to) => request("/settings/test-email", { method: "POST", body: { to } }),
   testProxy: () => request("/settings/test-proxy", { method: "POST" }),
+
+  // Checklist
+  getChecklist: () => request("/checklist/"),
+  createChecklistItem: (name) => request("/checklist/", { method: "POST", body: { name } }),
+  updateChecklistItem: (id, data) => request(`/checklist/${id}`, { method: "PATCH", body: data }),
+  deleteChecklistItem: (id) => request(`/checklist/${id}`, { method: "DELETE" }),
+  clearCheckedItems: () => request("/checklist/checked", { method: "DELETE" }),
 };
