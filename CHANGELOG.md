@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented here.
 
+## [0.3.5] - 2026-06-23
+### Fixed
+- DB connection pool exhaustion causing app-wide unresponsiveness during scraping
+  - Switched SQLite engine to `NullPool` (SQLite doesn't benefit from pooling)
+  - DB sessions are now closed before HTTP scrape requests and reopened only to write results
+  - Manual rescrape endpoints capped at 4 concurrent scrapes via semaphore (was unbounded)
+
 ## [0.3.4] - 2026-06-23
 ### Added
 - Admin settings now has sub-tabs (General, Network, Email, Users, Logs) to reduce clutter

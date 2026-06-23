@@ -15,32 +15,40 @@ scheduler = AsyncIOScheduler()
 
 
 async def scrape_product(product_id: int):
+    # Load just what we need, then close the session before the HTTP call.
     db: Session = SessionLocal()
     try:
         product = db.query(Product).filter(Product.id == product_id, Product.active == True).first()
         if not product or not product.store or not product.store.enabled:
             return
+        url = product.url
+        scraper_module = product.store.scraper_module
+        proxy = _resolve_proxy(db, scraper_module)
+    finally:
+        db.close()
 
-        proxy = _resolve_proxy(db, product.store.scraper_module)
-        if proxy:
-            logger.info(f"Scraping {product.url} via proxy {proxy}")
-        try:
-            scraper = get_scraper(product.store.scraper_module, proxy_url=proxy)
-        except ValueError as e:
-            logger.warning(f"Cannot scrape product {product_id}: {e}")
-            return
-        try:
-            result = await scraper.scrape_url(product.url)
-        except Exception as e:
-            logger.warning(f"Scrape failed for product {product_id}: {e}")
-            return
-        finally:
-            await scraper.close()
+    if proxy:
+        logger.info(f"Scraping {url} via proxy {proxy}")
+    try:
+        scraper = get_scraper(scraper_module, proxy_url=proxy)
+    except ValueError as e:
+        logger.warning(f"Cannot scrape product {product_id}: {e}")
+        return
+    try:
+        result = await scraper.scrape_url(url)
+    except Exception as e:
+        logger.warning(f"Scrape failed for product {product_id}: {e}")
+        return
+    finally:
+        await scraper.close()
 
-        now = datetime.utcnow()
-        await _apply_scrape_result(db, product, result, now)
-        db.commit()
-
+    # Reopen session only to write the result.
+    db = SessionLocal()
+    try:
+        product = db.query(Product).filter(Product.id == product_id).first()
+        if product:
+            await _apply_scrape_result(db, product, result, datetime.utcnow())
+            db.commit()
     except Exception as e:
         logger.error(f"Error processing product {product_id}: {e}")
         db.rollback()
@@ -90,27 +98,37 @@ async def scrape_all_active_products():
     logger.info(f"Scheduled scrape: {unique} unique URLs covering {total} product rows")
 
     for url, product_ids in url_to_ids.items():
+        # Load metadata, close session, then do the HTTP call.
         db: Session = SessionLocal()
         try:
             products = db.query(Product).filter(Product.id.in_(product_ids), Product.active == True).all()
             if not products:
+                db.close()
                 continue
-            store = products[0].store
-            proxy = _resolve_proxy(db, store.scraper_module)
-            if proxy:
-                logger.info(f"Scraping {url} via proxy {proxy}")
-            try:
-                scraper = get_scraper(store.scraper_module, proxy_url=proxy)
-            except ValueError as e:
-                logger.warning(f"Cannot scrape {url}: {e}")
-                continue
-            try:
-                result = await scraper.scrape_url(url)
-            except Exception as e:
-                logger.warning(f"Scrape failed for {url}: {e}")
-                continue
-            finally:
-                await scraper.close()
+            scraper_module = products[0].store.scraper_module
+            proxy = _resolve_proxy(db, scraper_module)
+        finally:
+            db.close()
+
+        if proxy:
+            logger.info(f"Scraping {url} via proxy {proxy}")
+        try:
+            scraper = get_scraper(scraper_module, proxy_url=proxy)
+        except ValueError as e:
+            logger.warning(f"Cannot scrape {url}: {e}")
+            continue
+        try:
+            result = await scraper.scrape_url(url)
+        except Exception as e:
+            logger.warning(f"Scrape failed for {url}: {e}")
+            continue
+        finally:
+            await scraper.close()
+
+        # Reopen session only to write results.
+        db = SessionLocal()
+        try:
+            products = db.query(Product).filter(Product.id.in_(product_ids), Product.active == True).all()
             now = datetime.utcnow()
             for product in products:
                 await _apply_scrape_result(db, product, result, now)

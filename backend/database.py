@@ -5,12 +5,16 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from sqlalchemy.engine import Engine
+from sqlalchemy.pool import NullPool
 
 DATABASE_URL = "sqlite:////data/tightarse.db"
 
+# NullPool: SQLite is file-based — connection pooling adds no benefit and
+# causes pool exhaustion when many concurrent async tasks each hold a session.
 engine = create_engine(
     DATABASE_URL,
     connect_args={"check_same_thread": False},
+    poolclass=NullPool,
 )
 
 
