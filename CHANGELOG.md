@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented here.
 
+## [0.3.6] - 2026-06-23
+### Fixed
+- Scheduled scrape now runs up to 6 URLs concurrently (semaphore-limited) instead of sequentially — hundreds of products no longer take hours per cycle
+- Scheduler job has `max_instances=1` + `coalesce=True` — a slow run can no longer overlap with the next scheduled trigger
+- Single shared semaphore across scheduler and manual rescrape triggers prevents total concurrency exceeding 6
+
 ## [0.3.5] - 2026-06-23
 ### Fixed
 - DB connection pool exhaustion causing app-wide unresponsiveness during scraping

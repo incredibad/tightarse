@@ -10,11 +10,9 @@ from auth import require_auth, require_admin, User
 from scrapers import get_scraper
 import scheduler as sched
 
-_RESCRAPE_SEM = asyncio.Semaphore(4)  # max 4 concurrent scrapes from manual triggers
-
 async def _scrape_limited(product_id: int):
-    async with _RESCRAPE_SEM:
-        await sched.scrape_product(product_id)
+    # sched.scrape_product already acquires _SCRAPE_SEM (shared with scheduler)
+    await sched.scrape_product(product_id)
 
 router = APIRouter(prefix="/products", tags=["products"])
 
