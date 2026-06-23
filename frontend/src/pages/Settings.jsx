@@ -4,7 +4,7 @@ import {
   UserPlus, Trash2, KeyRound, ShieldCheck, ShieldOff, User, Send, X,
   ChevronUp, ChevronDown, ToggleLeft, ToggleRight, Trash,
 } from "lucide-react";
-import { api, getToken } from "../api";
+import { api } from "../api";
 
 const DRAKES_STORES = [
   { id: "015", name: "Aldinga" },
@@ -684,7 +684,7 @@ function AdminLogsTab() {
   pausedRef.current = paused;
 
   useEffect(() => {
-    const token = getToken();
+    const token = localStorage.getItem("ta_token");
     const es = new EventSource(`/api/admin/logs/stream?token=${encodeURIComponent(token)}`);
     es.onmessage = (e) => {
       if (pausedRef.current) return;
