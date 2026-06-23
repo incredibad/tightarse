@@ -47,7 +47,7 @@ async def _scrape_product_inner(product_id: int) -> bool:
         result = await scraper.scrape_url(url)
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 404:
-            logger.info(f"Product {product_id} returned 404 — marking out of stock")
+            logger.error(f"Product {product_id} returned 404 — marking out of stock")
             db = SessionLocal()
             try:
                 product = db.query(Product).filter(Product.id == product_id).first()
@@ -129,7 +129,7 @@ async def _scrape_url_group(url: str, product_ids: list[int]) -> tuple[int, int]
             result = await scraper.scrape_url(url)
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
-                logger.info(f"{url} returned 404 — marking {len(product_ids)} product(s) out of stock")
+                logger.error(f"{url} returned 404 — marking {len(product_ids)} product(s) out of stock")
                 db = SessionLocal()
                 try:
                     now = datetime.utcnow()
