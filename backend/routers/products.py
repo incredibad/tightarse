@@ -229,6 +229,21 @@ async def create_product(
     return _enrich(product)
 
 
+@router.get("/scrape-stats")
+async def scrape_stats(_admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    from sqlalchemy import func
+    row = db.query(
+        func.max(Product.last_scraped_at).label("last"),
+        func.min(Product.last_scraped_at).label("oldest"),
+        func.count(Product.id).label("total"),
+    ).filter(Product.active == True).first()
+    return {
+        "last_scraped_at": row.last.isoformat() + "Z" if row.last else None,
+        "oldest_scraped_at": row.oldest.isoformat() + "Z" if row.oldest else None,
+        "total_active": row.total,
+    }
+
+
 @router.post("/rescrape/item/{item_id}", status_code=200)
 async def rescrape_item(item_id: int, current_user: User = Depends(require_auth)):
     db = SessionLocal()

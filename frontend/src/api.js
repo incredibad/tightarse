@@ -86,6 +86,7 @@ export const api = {
   toggleProduct: (id) => request(`/products/${id}/toggle`, { method: "PATCH" }),
   rescrapeItem: (itemId) => request(`/products/rescrape/item/${itemId}`, { method: "POST" }),
   rescrapeAll: () => request("/products/rescrape/all", { method: "POST" }),
+  getScrapeStats: () => request("/products/scrape-stats"),
 
   // Stores
   getStores: () => request("/stores/"),
