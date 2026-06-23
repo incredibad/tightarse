@@ -88,12 +88,16 @@ def update_settings(
 
     db.commit()
 
-    if "scrape_interval_hours" in payload.settings:
-        try:
-            hours = float(payload.settings["scrape_interval_hours"])
-            sched.reschedule(hours)
-        except ValueError:
-            pass
+    schedule_keys = {"scrape_schedule_type", "scrape_schedule_time", "scrape_schedule_day"}
+    if schedule_keys & set(payload.settings.keys()):
+        def _gs(key, default=""):
+            row = db.query(Setting).filter(Setting.key == key).first()
+            return row.value if row and row.value else default
+        sched.reschedule(
+            _gs("scrape_schedule_type", "6h"),
+            _gs("scrape_schedule_time", "06:00"),
+            _gs("scrape_schedule_day", "mon"),
+        )
 
     return updated
 

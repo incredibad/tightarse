@@ -30,13 +30,17 @@ async def lifespan(app: FastAPI):
 
     db = SessionLocal()
     try:
-        interval_row = db.query(Setting).filter(Setting.key == "scrape_interval_hours").first()
-        interval = float(interval_row.value) if interval_row else 6.0
+        def _gs(key, default=""):
+            row = db.query(Setting).filter(Setting.key == key).first()
+            return row.value if row and row.value else default
+        schedule_type = _gs("scrape_schedule_type", "6h")
+        schedule_time = _gs("scrape_schedule_time", "06:00")
+        schedule_day = _gs("scrape_schedule_day", "mon")
     finally:
         db.close()
 
-    logger.info(f"Starting scheduler (interval={interval}h)…")
-    sched.start_scheduler(interval)
+    logger.info(f"Starting scheduler (type={schedule_type} time={schedule_time} day={schedule_day})…")
+    sched.start_scheduler(schedule_type, schedule_time, schedule_day)
 
     yield
 

@@ -305,7 +305,9 @@ def _seed_default_settings():
     db = SessionLocal()
     # Only global/admin settings live in the Setting table
     global_defaults = {
-        "scrape_interval_hours": "6",
+        "scrape_schedule_type": "6h",
+        "scrape_schedule_time": "06:00",
+        "scrape_schedule_day": "mon",
         "email_smtp_host": "",
         "email_smtp_port": "587",
         "email_smtp_user": "",
@@ -340,7 +342,9 @@ USER_SETTING_DEFAULTS = {
 
 # Global setting keys (admin-only)
 GLOBAL_SETTING_KEYS = {
-    "scrape_interval_hours",
+    "scrape_schedule_type",
+    "scrape_schedule_time",
+    "scrape_schedule_day",
     "email_smtp_host",
     "email_smtp_port",
     "email_smtp_user",

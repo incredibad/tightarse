@@ -84,7 +84,7 @@ export default function Settings({ onLogout, user }) {
           rel="noopener noreferrer"
           className="text-xs text-gray-400 hover:text-brand-500 transition-colors font-mono"
         >
-          v0.3.9
+          v0.4.0
         </a>
       </div>
 
@@ -469,26 +469,49 @@ function AdminGeneralTab({ settings, set, save, saving, saveMsg }) {
   return (
     <div className="space-y-4">
       <Section title="Scraping">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">Check every</span>
-          <input
-            type="number" min="1" max="168"
-            value={settings.scrape_interval_hours ?? "6"}
-            onChange={(e) => set("scrape_interval_hours", e.target.value)}
-            className="w-16 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-          />
-          <span className="text-sm text-gray-600 dark:text-gray-400">hours</span>
-          <button onClick={() => save(["scrape_interval_hours"])} disabled={saving} className={btnCls}>
-            {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-            Save
-          </button>
-          {saveMsg && <span className={`text-xs ${saveMsg === "Saved" ? "text-brand-600" : "text-red-500"}`}>{saveMsg}</span>}
-          <button onClick={triggerScrape} disabled={scraping} className={btnCls}>
-            {scraping ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-            Check all now
-          </button>
-          {scrapeMsg && <span className="text-xs text-brand-600">{scrapeMsg}</span>}
-        </div>
+        {(() => {
+          const scheduleKeys = ["scrape_schedule_type", "scrape_schedule_time", "scrape_schedule_day"];
+          const type = settings.scrape_schedule_type ?? "6h";
+          const needsTime = ["daily", "2d", "weekly"].includes(type);
+          const needsDay = type === "weekly";
+          const days = ["mon","tue","wed","thu","fri","sat","sun"];
+          const dayLabels = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+          const selectCls = "text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500";
+          return (
+            <div className="flex items-center gap-2 flex-wrap">
+              <select value={type} onChange={(e) => set("scrape_schedule_type", e.target.value)} className={selectCls}>
+                <option value="6h">Every 6 hours</option>
+                <option value="12h">Every 12 hours</option>
+                <option value="daily">Daily</option>
+                <option value="2d">Every 2 days</option>
+                <option value="weekly">Weekly</option>
+              </select>
+              {needsDay && (
+                <select value={settings.scrape_schedule_day ?? "mon"} onChange={(e) => set("scrape_schedule_day", e.target.value)} className={selectCls}>
+                  {days.map((d, i) => <option key={d} value={d}>{dayLabels[i]}</option>)}
+                </select>
+              )}
+              {needsTime && (
+                <input
+                  type="time"
+                  value={settings.scrape_schedule_time ?? "06:00"}
+                  onChange={(e) => set("scrape_schedule_time", e.target.value)}
+                  className={selectCls}
+                />
+              )}
+              <button onClick={() => save(scheduleKeys)} disabled={saving} className={btnCls}>
+                {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                Save
+              </button>
+              {saveMsg && <span className={`text-xs ${saveMsg === "Saved" ? "text-brand-600" : "text-red-500"}`}>{saveMsg}</span>}
+              <button onClick={triggerScrape} disabled={scraping} className={btnCls}>
+                {scraping ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                Check all now
+              </button>
+              {scrapeMsg && <span className="text-xs text-brand-600">{scrapeMsg}</span>}
+            </div>
+          );
+        })()}
         {scrapeStats && (
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
             Last scraped {timeAgo(scrapeStats.last_scraped_at) ?? "never"}

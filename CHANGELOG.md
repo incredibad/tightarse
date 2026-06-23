@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented here.
 
+## [0.4.0] - 2026-06-23
+### Changed
+- Scrape schedule is now configured as a type rather than a raw hour count:
+  Every 6h, Every 12h, Daily at HH:MM, Every 2 days at HH:MM, Weekly on day at HH:MM
+- APScheduler uses CronTrigger for time-based schedules, IntervalTrigger for interval ones
+
 ## [0.3.8] - 2026-06-23
 ### Added
 - VPN status panel in Admin → Network showing exit IP, ISP/org, and location for the most recent connectivity check
