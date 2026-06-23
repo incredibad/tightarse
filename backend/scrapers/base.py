@@ -1,3 +1,4 @@
+import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Optional
@@ -60,3 +61,20 @@ class BaseScraper(ABC):
 
     async def __aexit__(self, *args):
         await self.close()
+
+
+def infer_cup_price(name: str, price: float) -> tuple[float | None, str | None]:
+    """Infer a unit price from size embedded in the product name when stores don't provide one."""
+    # Volume: 950ml, 1L, 1.5L, 750mL
+    m = re.search(r"([\d.]+)\s*(ml|l)\b", name, re.IGNORECASE)
+    if m:
+        qty = float(m.group(1))
+        ml = qty * 1000 if m.group(2).lower() == "l" else qty
+        return round(price / ml * 100, 4), "per 100ml"
+    # Weight: 500g, 1kg, 1.5kg
+    m = re.search(r"([\d.]+)\s*(kg|g)\b", name, re.IGNORECASE)
+    if m:
+        qty = float(m.group(1))
+        grams = qty * 1000 if m.group(2).lower() == "kg" else qty
+        return round(price / grams * 100, 4), "per 100g"
+    return None, None
