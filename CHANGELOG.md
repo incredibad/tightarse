@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented here.
 
+## [0.3.3] - 2026-06-23
+### Fixed
+- "Route all scraping through VPN" toggle now persists across page refreshes — stale per-user setting rows were shadowing the global value in the API response
+
 ## [0.3.2] - 2026-06-23
 ### Fixed
 - Woolworths Everyday Market (third-party seller) products are now excluded from search results and raise a clear error when added by URL
