@@ -2,7 +2,9 @@ import asyncio
 import logging
 from datetime import datetime
 
+from datetime import date
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy.orm import Session
 
@@ -219,21 +221,41 @@ async def _maybe_notify_price_drop(db: Session, product, old_price: float, new_p
                 logger.error(f"Notification failed [{channel}] for product {product.id}: {e}")
 
 
-def reschedule(interval_hours: float):
-    if scheduler.get_job("scrape_all"):
-        scheduler.remove_job("scrape_all")
+def _build_trigger(schedule_type: str, schedule_time: str, schedule_day: str):
+    try:
+        hour, minute = map(int, schedule_time.split(":"))
+    except Exception:
+        hour, minute = 6, 0
+
+    if schedule_type == "12h":
+        return IntervalTrigger(hours=12)
+    if schedule_type == "daily":
+        return CronTrigger(hour=hour, minute=minute)
+    if schedule_type == "2d":
+        today = date.today()
+        from datetime import datetime as dt
+        start = dt(today.year, today.month, today.day, hour, minute)
+        return IntervalTrigger(days=2, start_date=start)
+    if schedule_type == "weekly":
+        return CronTrigger(day_of_week=schedule_day, hour=hour, minute=minute)
+    # default: 6h
+    return IntervalTrigger(hours=6)
+
+
+def reschedule(schedule_type: str = "6h", schedule_time: str = "06:00", schedule_day: str = "mon"):
+    trigger = _build_trigger(schedule_type, schedule_time, schedule_day)
     scheduler.add_job(
         scrape_all_active_products,
-        trigger=IntervalTrigger(hours=interval_hours),
+        trigger=trigger,
         id="scrape_all",
         replace_existing=True,
         max_instances=1,
         coalesce=True,
     )
-    logger.info(f"Scraper rescheduled: every {interval_hours}h")
+    logger.info(f"Scraper rescheduled: type={schedule_type} time={schedule_time} day={schedule_day}")
 
 
-def start_scheduler(interval_hours: float = 6.0):
-    reschedule(interval_hours)
+def start_scheduler(schedule_type: str = "6h", schedule_time: str = "06:00", schedule_day: str = "mon"):
+    reschedule(schedule_type, schedule_time, schedule_day)
     if not scheduler.running:
         scheduler.start()
