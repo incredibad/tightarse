@@ -25,7 +25,12 @@ export default function Journey() {
   const [collapsedStores, setCollapsedStores] = useState({});
   const [checklist, setChecklist] = useState([]);
   const [checklistCollapsed, setChecklistCollapsed] = useState(false);
-  const [checkedItems, setCheckedItems] = useState(new Set());
+  const [checkedItems, setCheckedItems] = useState(() => {
+    try {
+      const saved = localStorage.getItem("ta_journey_checked");
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch { return new Set(); }
+  });
   const [showChecklist, setShowChecklist] = useState(true);
 
   useEffect(() => {
@@ -50,6 +55,7 @@ export default function Journey() {
     setCheckedItems((prev) => {
       const next = new Set(prev);
       next.has(itemId) ? next.delete(itemId) : next.add(itemId);
+      localStorage.setItem("ta_journey_checked", JSON.stringify([...next]));
       return next;
     });
   }
@@ -62,6 +68,7 @@ export default function Journey() {
 
   function resetJourney() {
     setCheckedItems(new Set());
+    localStorage.removeItem("ta_journey_checked");
   }
 
   if (loading) {
