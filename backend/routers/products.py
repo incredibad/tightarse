@@ -94,24 +94,13 @@ def _own_product(db: Session, product_id: int, user_id: int) -> Product:
 
 @router.get("/scrape-stats")
 async def scrape_stats(_admin: User = Depends(require_admin), db: Session = Depends(get_db)):
-    from sqlalchemy import func
-
-    def _fmt(val):
-        if val is None:
-            return None
-        if isinstance(val, str):
-            return val.replace(" ", "T") + "Z"
-        return val.isoformat() + "Z"
-
-    row = db.query(
-        func.max(Product.last_scraped_at).label("last"),
-        func.min(Product.last_scraped_at).label("oldest"),
-        func.count(Product.id).label("total"),
-    ).filter(Product.active == True).first()
+    total = db.query(Product).filter(Product.active == True).count()
+    last_run = sched.get_last_run()
     return {
-        "last_scraped_at": _fmt(row.last),
-        "oldest_scraped_at": _fmt(row.oldest),
-        "total_active": row.total,
+        "total_active": total,
+        "last_run_at": last_run["at"],
+        "last_run_success": last_run["success"],
+        "last_run_failed": last_run["failed"],
     }
 
 
@@ -271,14 +260,17 @@ async def rescrape_item(item_id: int, current_user: User = Depends(require_auth)
 
 @router.post("/rescrape/all", status_code=200)
 async def rescrape_all(_admin: User = Depends(require_admin)):
+    from datetime import datetime
     db = SessionLocal()
     try:
         ids = [p.id for p in db.query(Product).filter(Product.active == True).all()]
     finally:
         db.close()
-    if ids:
-        await asyncio.gather(*[_scrape_limited(pid) for pid in ids])
-    return {"scraped": len(ids)}
+    results = await asyncio.gather(*[_scrape_limited(pid) for pid in ids]) if ids else []
+    success = sum(1 for r in results if r)
+    failed = len(ids) - success
+    sched._last_run.update({"at": datetime.utcnow().isoformat() + "Z", "success": success, "failed": failed})
+    return {"scraped": success, "failed": failed}
 
 
 @router.delete("/{product_id}", status_code=204)

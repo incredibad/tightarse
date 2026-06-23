@@ -441,7 +441,7 @@ function AdminGeneralTab({ settings, set, save, saving, saveMsg }) {
     setScraping(true); setScrapeMsg("");
     try {
       const r = await api.rescrapeAll();
-      setScrapeMsg(`Scraped ${r.scraped} products`);
+      setScrapeMsg(r.failed > 0 ? `${r.scraped} ok, ${r.failed} failed` : `All ${r.scraped} products scraped`);
       setTimeout(() => setScrapeMsg(""), 3000);
     } catch (e) {
       setScrapeMsg(e.message);
@@ -518,11 +518,19 @@ function AdminGeneralTab({ settings, set, save, saving, saveMsg }) {
         })()}
         {scrapeStats && (
           <p className="text-xs text-gray-400 dark:text-gray-500">
-            Last scraped {timeAgo(scrapeStats.last_scraped_at) ?? "never"}
-            {scrapeStats.oldest_scraped_at && scrapeStats.last_scraped_at !== scrapeStats.oldest_scraped_at && (
-              <> · oldest {timeAgo(scrapeStats.oldest_scraped_at)}</>
+            {scrapeStats.last_run_at ? (
+              <>
+                Last scraped {timeAgo(scrapeStats.last_run_at)}
+                {" · "}
+                <span className="text-green-600 dark:text-green-400">{scrapeStats.last_run_success} ok</span>
+                {scrapeStats.last_run_failed > 0 && (
+                  <>, <span className="text-red-500">{scrapeStats.last_run_failed} failed</span></>
+                )}
+                {" · "}{scrapeStats.total_active} products
+              </>
+            ) : (
+              <>No scrape run yet · {scrapeStats.total_active} products</>
             )}
-            {" "}· {scrapeStats.total_active} active products
           </p>
         )}
       </Section>

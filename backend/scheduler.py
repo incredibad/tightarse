@@ -18,19 +18,24 @@ scheduler = AsyncIOScheduler()
 
 _SCRAPE_SEM = asyncio.Semaphore(6)  # max concurrent URL scrapes across scheduler + manual triggers
 
+_last_run: dict = {"at": None, "success": 0, "failed": 0}
 
-async def scrape_product(product_id: int):
+
+def get_last_run() -> dict:
+    return dict(_last_run)
+
+
+async def scrape_product(product_id: int) -> bool:
     async with _SCRAPE_SEM:
-        await _scrape_product_inner(product_id)
+        return await _scrape_product_inner(product_id)
 
 
-async def _scrape_product_inner(product_id: int):
-    # Load just what we need, then close the session before the HTTP call.
+async def _scrape_product_inner(product_id: int) -> bool:
     db: Session = SessionLocal()
     try:
         product = db.query(Product).filter(Product.id == product_id, Product.active == True).first()
         if not product or not product.store or not product.store.enabled:
-            return
+            return False
         url = product.url
         scraper_module = product.store.scraper_module
         proxy = _resolve_proxy(db, scraper_module)
@@ -43,25 +48,27 @@ async def _scrape_product_inner(product_id: int):
         scraper = get_scraper(scraper_module, proxy_url=proxy)
     except ValueError as e:
         logger.warning(f"Cannot scrape product {product_id}: {e}")
-        return
+        return False
     try:
         result = await scraper.scrape_url(url)
     except Exception as e:
         logger.warning(f"Scrape failed for product {product_id}: {e}")
-        return
+        return False
     finally:
         await scraper.close()
 
-    # Reopen session only to write the result.
     db = SessionLocal()
     try:
         product = db.query(Product).filter(Product.id == product_id).first()
         if product:
             await _apply_scrape_result(db, product, result, datetime.utcnow())
             db.commit()
+            return True
+        return False
     except Exception as e:
         logger.error(f"Error processing product {product_id}: {e}")
         db.rollback()
+        return False
     finally:
         db.close()
 
@@ -88,14 +95,15 @@ async def _apply_scrape_result(db: Session, product: Product, result, now: datet
         product.image_url = result.image_url
 
 
-async def _scrape_url_group(url: str, product_ids: list[int]):
-    """Scrape one URL and write results for all product rows sharing that URL."""
+async def _scrape_url_group(url: str, product_ids: list[int]) -> tuple[int, int]:
+    """Scrape one URL and write results for all product rows sharing that URL.
+    Returns (success_count, failed_count)."""
     async with _SCRAPE_SEM:
         db: Session = SessionLocal()
         try:
             products = db.query(Product).filter(Product.id.in_(product_ids), Product.active == True).all()
             if not products:
-                return
+                return 0, len(product_ids)
             scraper_module = products[0].store.scraper_module
             proxy = _resolve_proxy(db, scraper_module)
         finally:
@@ -107,12 +115,12 @@ async def _scrape_url_group(url: str, product_ids: list[int]):
             scraper = get_scraper(scraper_module, proxy_url=proxy)
         except ValueError as e:
             logger.warning(f"Cannot scrape {url}: {e}")
-            return
+            return 0, len(product_ids)
         try:
             result = await scraper.scrape_url(url)
         except Exception as e:
             logger.warning(f"Scrape failed for {url}: {e}")
-            return
+            return 0, len(product_ids)
         finally:
             await scraper.close()
 
@@ -123,9 +131,11 @@ async def _scrape_url_group(url: str, product_ids: list[int]):
             for product in products:
                 await _apply_scrape_result(db, product, result, now)
             db.commit()
+            return len(products), 0
         except Exception as e:
             logger.error(f"Error processing {url}: {e}")
             db.rollback()
+            return 0, len(product_ids)
         finally:
             db.close()
 
@@ -174,7 +184,11 @@ async def scrape_all_active_products():
     if proxy_url and via_vpn:
         await _check_and_record_vpn_ip(proxy_url)
 
-    await asyncio.gather(*[_scrape_url_group(url, ids) for url, ids in url_to_ids.items()])
+    results = await asyncio.gather(*[_scrape_url_group(url, ids) for url, ids in url_to_ids.items()])
+    success = sum(r[0] for r in results)
+    failed = sum(r[1] for r in results)
+    _last_run.update({"at": datetime.utcnow().isoformat() + "Z", "success": success, "failed": failed})
+    logger.info(f"Scheduled scrape complete: {success} succeeded, {failed} failed")
 
 
 def _resolve_proxy(db: Session, scraper_module: str) -> str:
