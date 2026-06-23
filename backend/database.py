@@ -353,6 +353,7 @@ USER_SETTING_DEFAULTS = {
     "gotify_app_token": "",
     "drakes_store_id": "087",
     "store_order": "",   # JSON array of store IDs in preferred order; "" = use global default
+    "include_checklist_in_journey": "true",
 }
 
 # Global setting keys (admin-only)
