@@ -43,8 +43,9 @@ def list_settings(current_user: User = Depends(require_auth), db: Session = Depe
         results.append(SettingOut(key=key, value=user_rows.get(key, default)))
         seen.add(key)
     # Also return any dynamic per-user keys (store_order, store_{id}_enabled, etc.)
+    # Skip keys that are global settings — stale UserSetting rows must not shadow them.
     for key, value in user_rows.items():
-        if key not in seen:
+        if key not in seen and key not in GLOBAL_SETTING_KEYS:
             results.append(SettingOut(key=key, value=value))
 
     return results
