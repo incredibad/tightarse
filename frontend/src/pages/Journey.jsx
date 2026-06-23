@@ -55,12 +55,12 @@ export default function Journey() {
   }
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-3 space-y-3">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold">Shopping Journey</h1>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 shadow-sm flex justify-between items-center">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2.5 shadow-sm flex justify-between items-center">
         <div>
           <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">Estimated total</p>
           <p className="text-3xl font-bold text-gray-900 dark:text-white">${journey.estimated_total.toFixed(2)}</p>
@@ -78,7 +78,7 @@ export default function Journey() {
         >
           <button
             onClick={() => toggleStore(store.store_id)}
-            className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 active:opacity-70 transition-opacity"
+            className="w-full flex items-center justify-between px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 active:opacity-70 transition-opacity"
           >
             <div className="flex items-center gap-2">
               <StorePill name={store.store_name} long />
@@ -101,7 +101,7 @@ export default function Journey() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center">
                       {/* Name — 50% */}
-                      <div className="w-[50%] min-w-0 px-4 py-3">
+                      <div className="w-[50%] min-w-0 px-3 py-2">
                         <Tooltip content={item.item_name}>
                           <p className="font-medium text-gray-900 dark:text-white text-sm truncate">{item.item_name}</p>
                         </Tooltip>
@@ -110,17 +110,17 @@ export default function Journey() {
                         </Tooltip>
                       </div>
                       {/* Cup price — two lines */}
-                      <div className="w-[22%] px-1 py-3 shrink-0">
+                      <div className="w-[22%] px-1 py-2 shrink-0">
                         <CupPrice price={cp.cup_price} label={cp.cup_label} />
                       </div>
                       {/* Was price */}
-                      <div className="w-[11%] px-1 py-3 text-right shrink-0">
+                      <div className="w-[11%] px-1 py-2 text-right shrink-0">
                         <p className="text-[10px] text-gray-400 line-through leading-tight">
                           {onSpecial && cp.was_price != null ? `$${cp.was_price.toFixed(2)}` : ""}
                         </p>
                       </div>
                       {/* Price */}
-                      <div className="w-[17%] px-2 py-3 text-right shrink-0">
+                      <div className="w-[17%] px-2 py-2 text-right shrink-0">
                         <p className={`text-sm font-bold leading-tight ${onSpecial ? "text-red-500 dark:text-yellow-400" : "text-gray-900 dark:text-white"}`}>
                           ${cp.price.toFixed(2)}
                         </p>
