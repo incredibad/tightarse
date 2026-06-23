@@ -2,11 +2,13 @@ import { useState, useEffect, useRef } from "react";
 import { CheckSquare, Square, Trash2, ShoppingCart, ClipboardList } from "lucide-react";
 import { api } from "../api";
 import { useNavigate } from "react-router-dom";
+import ConfirmModal from "../components/ConfirmModal";
 
 export default function Checklist() {
   const [items, setItems] = useState([]);
   const [input, setInput] = useState("");
   const [tracking, setTracking] = useState(null);
+  const [trackConfirm, setTrackConfirm] = useState(null); // item to confirm
   const [editing, setEditing] = useState(null); // { id, value }
   const inputRef = useRef(null);
   const navigate = useNavigate();
@@ -63,6 +65,7 @@ export default function Checklist() {
 
   async function trackItem(item) {
     setTracking(item.id);
+    setTrackConfirm(null);
     try {
       const newItem = await api.createItem({ name: item.name });
       removeItem(item.id);
@@ -74,6 +77,15 @@ export default function Checklist() {
 
   return (
     <div className="p-4 space-y-4">
+      {trackConfirm && (
+        <ConfirmModal
+          title="Add to Shopping List?"
+          message={`This will create a new Shopping List item called "${trackConfirm.name}", remove it from your checklist, and take you to the product search page.`}
+          confirmLabel="Add to List"
+          onConfirm={() => trackItem(trackConfirm)}
+          onCancel={() => setTrackConfirm(null)}
+        />
+      )}
       <h1 className="text-xl font-bold">Checklist</h1>
 
       <form onSubmit={addItem} className="flex gap-2">
@@ -129,7 +141,7 @@ export default function Checklist() {
                 </span>
               )}
               <button
-                onClick={() => trackItem(item)}
+                onClick={() => setTrackConfirm(item)}
                 disabled={tracking === item.id}
                 title="Track on Shopping List"
                 className="shrink-0 text-gray-400 hover:text-brand-500 active:opacity-70 transition-colors disabled:opacity-40"
