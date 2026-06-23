@@ -6,7 +6,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy.orm import Session
 
-from database import SessionLocal, Product, Store, PriceHistory, Notification, Setting, get_user_setting, get_global_setting
+from database import SessionLocal, Product, Store, PriceHistory, Notification, Setting, get_user_setting, get_global_setting, record_vpn_ip
 from scrapers import get_scraper
 from notifications import send_price_drop_notification
 
@@ -128,6 +128,26 @@ async def _scrape_url_group(url: str, product_ids: list[int]):
             db.close()
 
 
+async def _check_and_record_vpn_ip(proxy_url: str):
+    """Hit ipinfo.io via the proxy and persist the exit IP if it's changed."""
+    import httpx
+    try:
+        async with httpx.AsyncClient(proxy=proxy_url, timeout=10.0) as client:
+            r = await client.get("https://ipinfo.io/json")
+            r.raise_for_status()
+            data = r.json()
+        ip = data.get("ip", "unknown")
+        db = SessionLocal()
+        try:
+            inserted = record_vpn_ip(db, ip, data.get("org"), data.get("city"), data.get("country"))
+            if inserted:
+                logger.info(f"VPN exit IP changed → {ip} ({data.get('org', '')} {data.get('city', '')})")
+        finally:
+            db.close()
+    except Exception as e:
+        logger.warning(f"VPN IP check failed: {e}")
+
+
 async def scrape_all_active_products():
     db: Session = SessionLocal()
     try:
@@ -140,12 +160,17 @@ async def scrape_all_active_products():
         url_to_ids: dict[str, list[int]] = {}
         for url, pid in rows:
             url_to_ids.setdefault(url, []).append(pid)
+        proxy_url = get_global_setting(db, "vpn_proxy_url")
+        via_vpn = get_global_setting(db, "scrape_via_vpn") == "true"
     finally:
         db.close()
 
     unique = len(url_to_ids)
     total = sum(len(v) for v in url_to_ids.values())
     logger.info(f"Scheduled scrape: {unique} unique URLs covering {total} product rows")
+
+    if proxy_url and via_vpn:
+        await _check_and_record_vpn_ip(proxy_url)
 
     await asyncio.gather(*[_scrape_url_group(url, ids) for url, ids in url_to_ids.items()])
 
