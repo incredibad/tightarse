@@ -45,6 +45,21 @@ async def _scrape_product_inner(product_id: int) -> bool:
         return False
     try:
         result = await scraper.scrape_url(url)
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 404:
+            logger.warning(f"Product {product_id} returned 404 — marking out of stock")
+            db = SessionLocal()
+            try:
+                product = db.query(Product).filter(Product.id == product_id).first()
+                if product:
+                    product.in_stock = False
+                    product.last_scraped_at = datetime.utcnow()
+                    db.commit()
+            finally:
+                db.close()
+        else:
+            logger.warning(f"Scrape failed for product {product_id}: {e}")
+        return False
     except Exception as e:
         logger.warning(f"Scrape failed for product {product_id}: {e}")
         return False
@@ -112,6 +127,23 @@ async def _scrape_url_group(url: str, product_ids: list[int]) -> tuple[int, int]
             return 0, len(product_ids)
         try:
             result = await scraper.scrape_url(url)
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                logger.warning(f"{url} returned 404 — marking {len(product_ids)} product(s) out of stock")
+                db = SessionLocal()
+                try:
+                    now = datetime.utcnow()
+                    for pid in product_ids:
+                        p = db.query(Product).filter(Product.id == pid).first()
+                        if p:
+                            p.in_stock = False
+                            p.last_scraped_at = now
+                    db.commit()
+                finally:
+                    db.close()
+            else:
+                logger.warning(f"Scrape failed for {url}: {e}")
+            return 0, len(product_ids)
         except Exception as e:
             logger.warning(f"Scrape failed for {url}: {e}")
             return 0, len(product_ids)
