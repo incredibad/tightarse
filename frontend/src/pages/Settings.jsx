@@ -443,8 +443,12 @@ function AdminGeneralTab({ settings, set, save, saving, saveMsg }) {
       const r = await api.rescrapeAll();
       setScrapeMsg(`Scraped ${r.scraped} products`);
       setTimeout(() => setScrapeMsg(""), 3000);
+    } catch (e) {
+      setScrapeMsg(e.message);
+    } finally {
+      setScraping(false);
       api.getScrapeStats().then(setScrapeStats).catch(() => {});
-    } catch (e) { setScrapeMsg(e.message); } finally { setScraping(false); }
+    }
   }
 
   async function runDrakesScan() {
