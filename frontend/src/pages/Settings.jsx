@@ -468,7 +468,7 @@ function AdminGeneralTab({ settings, set, save, saving, saveMsg }) {
 
   return (
     <div className="space-y-4">
-      <Section title="Scraping" description="Automatically checks prices across all your tracked products on the schedule below. You can also trigger an immediate check at any time.">
+      <Section title="Scraping" description="Automatically checks prices for all tracked products across all users on the schedule below. Regular users cannot trigger scraping themselves — only admins can run it manually or change the schedule.">
         {(() => {
           const scheduleKeys = ["scrape_schedule_type", "scrape_schedule_time", "scrape_schedule_day"];
           const type = settings.scrape_schedule_type ?? "6h";
@@ -917,10 +917,8 @@ function TestEmailModal({ onClose }) {
 function Section({ title, description, children }) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
-      <div>
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400">{title}</h2>
-        {description && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{description}</p>}
-      </div>
+      <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400">{title}</h2>
+      {description && <p className="text-xs text-gray-500 dark:text-gray-400">{description}</p>}
       {children}
     </div>
   );
