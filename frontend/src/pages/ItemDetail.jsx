@@ -195,6 +195,12 @@ export default function ItemDetail() {
                   {isOpen && (
                     <div className="absolute left-0 top-8 z-30 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg py-1 min-w-[140px]">
                       <button
+                        onClick={() => { setOpenMenuId(null); navigate(`/items/${itemId}/products/${p.id}/history`); }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                      >
+                        Price history
+                      </button>
+                      <button
                         onClick={() => handleToggle(p.id)}
                         className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                       >
