@@ -150,6 +150,17 @@ class UserSetting(Base):
     user = relationship("User", back_populates="settings")
 
 
+class VpnCheckHistory(Base):
+    __tablename__ = "vpn_check_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    ip = Column(String, nullable=False)
+    org = Column(String)
+    city = Column(String)
+    country = Column(String)
+    checked_at = Column(DateTime, default=datetime.utcnow)
+
+
 def get_db():
     db = SessionLocal()
     try:
@@ -195,6 +206,7 @@ def _migrate_db():
         # clean up leftover tables from previous migration attempts
         "DROP TABLE IF EXISTS products_new",
         "CREATE TABLE IF NOT EXISTS checklist_items (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, name TEXT NOT NULL, checked INTEGER NOT NULL DEFAULT 0, position INTEGER NOT NULL DEFAULT 0, created_at TEXT)",
+        "CREATE TABLE IF NOT EXISTS vpn_check_history (id INTEGER PRIMARY KEY AUTOINCREMENT, ip TEXT NOT NULL, org TEXT, city TEXT, country TEXT, checked_at TEXT)",
     ]
     with engine.connect() as conn:
         for sql in migrations:

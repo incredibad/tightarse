@@ -84,7 +84,7 @@ export default function Settings({ onLogout, user }) {
           rel="noopener noreferrer"
           className="text-xs text-gray-400 hover:text-brand-500 transition-colors font-mono"
         >
-          v0.3.7
+          v0.3.8
         </a>
       </div>
 
@@ -506,52 +506,111 @@ function AdminGeneralTab({ settings, set, save, saving, saveMsg }) {
 
 function AdminNetworkTab({ settings, set, save, saving, saveMsg }) {
   const [proxyTesting, setProxyTesting] = useState(false);
-  const [proxyTestResult, setProxyTestResult] = useState(null);
+  const [proxyError, setProxyError] = useState(null);
+  const [history, setHistory] = useState([]);
+
+  useEffect(() => {
+    api.getProxyHistory().then(setHistory).catch(() => {});
+  }, []);
 
   async function testProxy() {
-    setProxyTesting(true); setProxyTestResult(null);
+    setProxyTesting(true); setProxyError(null);
     try {
-      const r = await api.testProxy();
-      setProxyTestResult({ ok: true, ip: r.ip });
+      await api.testProxy();
+      const h = await api.getProxyHistory();
+      setHistory(h);
     } catch (e) {
-      setProxyTestResult({ ok: false, msg: e.message });
+      setProxyError(e.message);
     } finally { setProxyTesting(false); }
   }
 
+  const latest = history[0] ?? null;
+
   return (
-    <Section title="VPN / Proxy">
-      <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed mb-2">
-        Route scraping through an HTTP proxy (e.g. gluetun on your Docker network).
-        Amazon Australia <strong>always</strong> requires a proxy to protect your home IP — it will not
-        scrape without one. Other stores use the proxy only when "Route all through VPN" is on.
-      </p>
-      <Field label="Proxy URL">
-        <input
-          type="url"
-          value={settings.vpn_proxy_url ?? ""}
-          onChange={(e) => set("vpn_proxy_url", e.target.value)}
-          placeholder="http://gluetun:8888"
-          className={inputCls}
+    <>
+      <Section title="VPN / Proxy">
+        <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed mb-2">
+          Route scraping through an HTTP proxy (e.g. gluetun on your Docker network).
+          Amazon Australia <strong>always</strong> requires a proxy to protect your home IP — it will not
+          scrape without one. Other stores use the proxy only when "Route all through VPN" is on.
+        </p>
+        <Field label="Proxy URL">
+          <input
+            type="url"
+            value={settings.vpn_proxy_url ?? ""}
+            onChange={(e) => set("vpn_proxy_url", e.target.value)}
+            placeholder="http://gluetun:8888"
+            className={inputCls}
+          />
+        </Field>
+        <Toggle
+          label="Route all scraping through VPN"
+          value={settings.scrape_via_vpn === "true"}
+          onChange={(v) => set("scrape_via_vpn", v ? "true" : "false")}
         />
-      </Field>
-      <Toggle
-        label="Route all scraping through VPN"
-        value={settings.scrape_via_vpn === "true"}
-        onChange={(v) => set("scrape_via_vpn", v ? "true" : "false")}
-      />
-      <div className="flex items-center gap-3 pt-1 flex-wrap">
-        <SaveBar keys={["vpn_proxy_url", "scrape_via_vpn"]} save={save} saving={saving} msg={saveMsg} />
-        <button onClick={testProxy} disabled={proxyTesting || !settings.vpn_proxy_url} className={btnCls}>
-          {proxyTesting ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-          Test connectivity
-        </button>
-        {proxyTestResult && (
-          proxyTestResult.ok
-            ? <span className="text-xs text-brand-600">Connected — exit IP: {proxyTestResult.ip}</span>
-            : <span className="text-xs text-red-500">{proxyTestResult.msg}</span>
+        <div className="flex items-center gap-3 pt-1 flex-wrap">
+          <SaveBar keys={["vpn_proxy_url", "scrape_via_vpn"]} save={save} saving={saving} msg={saveMsg} />
+          <button onClick={testProxy} disabled={proxyTesting || !settings.vpn_proxy_url} className={btnCls}>
+            {proxyTesting ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+            Check now
+          </button>
+          {proxyError && <span className="text-xs text-red-500">{proxyError}</span>}
+        </div>
+      </Section>
+
+      <Section title="VPN Status">
+        {latest ? (
+          <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden text-sm">
+            <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y divide-gray-200 dark:divide-gray-700">
+              {[
+                ["Exit IP", latest.ip],
+                ["ISP / Org", latest.org ?? "—"],
+                ["Location", [latest.city, latest.country].filter(Boolean).join(", ") || "—"],
+                ["Last checked", new Date(latest.checked_at).toLocaleString()],
+              ].map(([label, value]) => (
+                <div key={label} className="px-3 py-2">
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{label}</div>
+                  <div className="font-mono text-xs text-gray-900 dark:text-gray-100 break-all">{value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <p className="text-xs text-gray-400">No check recorded yet — click "Check now" above.</p>
         )}
-      </div>
-    </Section>
+      </Section>
+
+      {history.length > 0 && (
+        <Section title="Check History">
+          <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-left">
+                  <th className="px-3 py-2 font-medium">Time</th>
+                  <th className="px-3 py-2 font-medium">Exit IP</th>
+                  <th className="px-3 py-2 font-medium">ISP / Org</th>
+                  <th className="px-3 py-2 font-medium">Location</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                {history.map((row) => (
+                  <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                    <td className="px-3 py-2 whitespace-nowrap text-gray-500 dark:text-gray-400">
+                      {new Date(row.checked_at).toLocaleString()}
+                    </td>
+                    <td className="px-3 py-2 font-mono text-gray-900 dark:text-gray-100">{row.ip}</td>
+                    <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{row.org ?? "—"}</td>
+                    <td className="px-3 py-2 text-gray-700 dark:text-gray-300">
+                      {[row.city, row.country].filter(Boolean).join(", ") || "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Section>
+      )}
+    </>
   );
 }
 

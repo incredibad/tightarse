@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented here.
 
+## [0.3.8] - 2026-06-23
+### Added
+- VPN status panel in Admin → Network showing exit IP, ISP/org, and location for the most recent connectivity check
+- VPN check history table (last 50 checks) so you can see when the VPN server changed or rotated
+- Connectivity check now uses ipinfo.io to return richer data (ISP name, city, country) instead of just the IP
+- History is auto-loaded when the Network tab opens; "Check now" refreshes it immediately
+
 ## [0.3.7] - 2026-06-23
 ### Fixed
 - `test_email` ran blocking `smtplib` calls on the async event loop, freezing all requests for up to 10 seconds — moved to a thread executor
