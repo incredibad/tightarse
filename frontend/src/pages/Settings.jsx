@@ -84,7 +84,7 @@ export default function Settings({ onLogout, user }) {
           rel="noopener noreferrer"
           className="text-xs text-gray-400 hover:text-brand-500 transition-colors font-mono"
         >
-          v0.5.3
+          v0.5.4
         </a>
       </div>
 
