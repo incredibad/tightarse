@@ -84,7 +84,7 @@ export default function Settings({ onLogout, user }) {
           rel="noopener noreferrer"
           className="text-xs text-gray-400 hover:text-brand-500 transition-colors font-mono"
         >
-          v0.5.7
+          v0.5.8
         </a>
       </div>
 
@@ -360,7 +360,7 @@ function StoresTab() {
   }
 
   async function searchColesStores(e) {
-    e.preventDefault();
+    e?.preventDefault();
     setColesSearching(true); setColesSearchResults(null); setColesMsg("");
     try {
       const results = await api.searchColesStores(colesPostcode);
@@ -403,7 +403,7 @@ function StoresTab() {
         {saving && <p className="text-xs text-brand-500">Saving…</p>}
         <div className="space-y-0 pt-1">
           {stores.filter((s) => s.available !== false).map((store, i) => (
-            <div key={store.id} className="border-b border-gray-100 dark:border-gray-700 last:border-0">
+            <div key={store.id} className="border-b border-gray-100 dark:border-gray-700 last:border-0 relative">
               <div className="flex items-center gap-2 py-1.5">
                 <div className="flex flex-col gap-0.5 shrink-0">
                   <button onClick={() => move(i, -1)} disabled={i === 0} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 disabled:opacity-20"><ChevronUp size={14} /></button>
@@ -429,12 +429,36 @@ function StoresTab() {
                 {store.scraper_module === "coles" && store.enabled && (
                   <div className="flex items-center gap-1.5 shrink-0">
                     <InfoTooltip text="Pricing may vary by store. Some Coles products aren't priced online — we fall back to in-store pricing for these. Set your nearest store so prices are accurate." />
-                    <button
-                      onClick={() => { setColesPickerOpen((o) => !o); setColesSearchResults(null); setColesMsg(""); }}
-                      className="text-xs text-brand-600 hover:text-brand-700 dark:text-brand-400 font-medium max-w-[7rem] truncate"
-                    >
-                      {colesStoreName || (colesStoreId ? `#${colesStoreId}` : "Set store")}
-                    </button>
+                    {colesPickerOpen ? (
+                      <>
+                        <input
+                          autoFocus
+                          type="text"
+                          value={colesPostcode}
+                          onChange={(e) => setColesPostcode(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Escape") { setColesPickerOpen(false); setColesSearchResults(null); } }}
+                          placeholder="Postcode"
+                          maxLength={4}
+                          className="w-16 text-xs bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded px-2 py-0.5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-brand-500 font-mono"
+                        />
+                        <button
+                          onClick={searchColesStores}
+                          disabled={colesSearching || colesPostcode.length !== 4}
+                          className="text-xs font-medium text-brand-600 hover:text-brand-700 disabled:opacity-40 shrink-0"
+                        >
+                          {colesSearching ? <Loader2 size={11} className="animate-spin inline" /> : "Find"}
+                        </button>
+                        <button onClick={() => { setColesPickerOpen(false); setColesSearchResults(null); }} className="text-gray-400 hover:text-gray-600 shrink-0"><X size={12} /></button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => { setColesPickerOpen(true); setColesSearchResults(null); setColesMsg(""); }}
+                        className="text-xs text-brand-600 hover:text-brand-700 dark:text-brand-400 font-medium max-w-[7rem] truncate"
+                      >
+                        {colesStoreName || (colesStoreId ? `#${colesStoreId}` : "Set store")}
+                      </button>
+                    )}
+                    {colesMsg && !colesPickerOpen && <span className="text-xs text-red-500 shrink-0">{colesMsg}</span>}
                   </div>
                 )}
                 <button
@@ -445,41 +469,19 @@ function StoresTab() {
                   {store.enabled ? "On" : "Off"}
                 </button>
               </div>
-              {store.scraper_module === "coles" && store.enabled && colesPickerOpen && (
-                <div className="ml-10 pb-3">
-                  <form onSubmit={searchColesStores}>
-                    <div className="flex items-center gap-2 py-1.5">
-                      <input
-                        autoFocus
-                        type="text"
-                        value={colesPostcode}
-                        onChange={(e) => setColesPostcode(e.target.value)}
-                        placeholder="Postcode"
-                        maxLength={4}
-                        className="w-20 text-xs bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 font-mono"
-                      />
-                      <button type="submit" disabled={colesSearching || colesPostcode.length !== 4} className="flex items-center gap-1 text-xs font-medium bg-brand-500 hover:bg-brand-600 text-white px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-50 shrink-0">
-                        {colesSearching ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-                        Find
-                      </button>
-                      {colesMsg && <span className="text-xs text-red-500">{colesMsg}</span>}
-                    </div>
-                  </form>
-                  {colesSearchResults && colesSearchResults.length > 0 && (
-                    <div className="max-h-40 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700">
-                      {colesSearchResults.map((s) => (
-                        <button
-                          key={s.id}
-                          onClick={() => selectColesStore(s)}
-                          className={`w-full text-left flex items-center gap-2 py-2 text-xs transition-colors ${colesStoreId === s.id ? "font-semibold text-gray-900 dark:text-white" : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"}`}
-                        >
-                          <span className="w-3 shrink-0 text-brand-500">{colesStoreId === s.id ? "✓" : ""}</span>
-                          <span className="flex-1">{s.name}</span>
-                          <span className="text-gray-400 shrink-0 truncate max-w-[10rem]">{s.address}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
+              {store.scraper_module === "coles" && store.enabled && colesPickerOpen && colesSearchResults && colesSearchResults.length > 0 && (
+                <div className="absolute left-0 right-0 top-full z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-40 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700">
+                  {colesSearchResults.map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => selectColesStore(s)}
+                      className={`w-full text-left flex items-center gap-2 px-3 py-2 text-xs transition-colors ${colesStoreId === s.id ? "font-semibold text-gray-900 dark:text-white" : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+                    >
+                      <span className="w-3 shrink-0 text-brand-500">{colesStoreId === s.id ? "✓" : ""}</span>
+                      <span className="flex-1">{s.name}</span>
+                      <span className="text-gray-400 shrink-0 truncate max-w-[10rem]">{s.address}</span>
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
