@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown, ChevronUp, Loader2, ShoppingBag, RotateCcw, Square, CheckSquare, Trash2, ShoppingCart, ClipboardList } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2, ShoppingBag, RotateCcw, Square, CheckSquare, Trash2, ShoppingCart, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import ConfirmModal from "../components/ConfirmModal";
@@ -175,8 +175,8 @@ export default function Journey() {
                 : "border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
             }`}
           >
-            <ClipboardList size={13} />
-            {showChecklist ? "Checklist" : "Checklist"}
+            {showChecklist ? <EyeOff size={13} /> : <Eye size={13} />}
+            Checklist
           </button>
         </div>
       </div>
