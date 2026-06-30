@@ -1,4 +1,5 @@
 import re
+import httpx
 from bs4 import BeautifulSoup
 from curl_cffi.requests import AsyncSession
 from .base import BaseScraper, ScrapeResult, infer_cup_price
@@ -16,9 +17,17 @@ class ALDIScraper(BaseScraper):
     async def close(self):
         await self._session.close()
 
+    def _raise_for_status(self, response, url: str):
+        if response.status_code >= 400:
+            raise httpx.HTTPStatusError(
+                f"{response.status_code}",
+                request=httpx.Request("GET", url),
+                response=httpx.Response(response.status_code),
+            )
+
     async def scrape_url(self, url: str) -> ScrapeResult:
         response = await self._session.get(url)
-        response.raise_for_status()
+        self._raise_for_status(response, url)
         soup = BeautifulSoup(response.text, "html.parser")
 
         name = _extract_name(soup)
@@ -48,7 +57,7 @@ class ALDIScraper(BaseScraper):
         url = "https://www.aldi.com.au/results"
         params = {"q": query}
         response = await self._session.get(url, params=params)
-        response.raise_for_status()
+        self._raise_for_status(response, url)
         soup = BeautifulSoup(response.text, "html.parser")
 
         headline = soup.select_one(".product-listing-viewer__headline")
