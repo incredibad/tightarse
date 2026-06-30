@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import {
   Sun, Moon, LogOut, Save, RefreshCw, Loader2,
   UserPlus, Trash2, KeyRound, ShieldCheck, ShieldOff, User, Send, X,
-  ChevronUp, ChevronDown, ToggleLeft, ToggleRight, Trash,
+  ChevronUp, ChevronDown, ToggleLeft, ToggleRight, Trash, Info,
 } from "lucide-react";
 import { api } from "../api";
 
@@ -84,7 +84,7 @@ export default function Settings({ onLogout, user }) {
           rel="noopener noreferrer"
           className="text-xs text-gray-400 hover:text-brand-500 transition-colors font-mono"
         >
-          v0.5.4
+          v0.5.5
         </a>
       </div>
 
@@ -283,6 +283,7 @@ function StoresTab() {
   const [colesStoreId, setColesStoreId] = useState("4670");
   const [colesStoreName, setColesStoreName] = useState("");
   const [colesMsg, setColesMsg] = useState("");
+  const [colesPickerOpen, setColesPickerOpen] = useState(false);
   const [colesPostcode, setColesPostcode] = useState("");
   const [colesSearchResults, setColesSearchResults] = useState(null);
   const [colesSearching, setColesSearching] = useState(false);
@@ -377,11 +378,10 @@ function StoresTab() {
     setColesStoreName(store.name);
     setColesSearchResults(null);
     setColesPostcode("");
+    setColesPickerOpen(false);
     setColesMsg("");
     try {
       await api.updateSettings({ coles_store_id: store.id, coles_store_name: store.name });
-      setColesMsg("Saved");
-      setTimeout(() => setColesMsg(""), 2000);
     } catch (e) {
       setColesMsg(e.message);
     }
@@ -427,9 +427,15 @@ function StoresTab() {
                   </>
                 )}
                 {store.scraper_module === "coles" && store.enabled && (
-                  <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0 truncate max-w-[8rem]">
-                    {colesStoreName || (colesStoreId ? `#${colesStoreId}` : "No store set")}
-                  </span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <InfoTooltip text="Pricing may vary by store. Some Coles products aren't priced online — we fall back to in-store pricing for these. Set your nearest store so prices are accurate." />
+                    <button
+                      onClick={() => { setColesPickerOpen((o) => !o); setColesSearchResults(null); setColesMsg(""); }}
+                      className="text-xs text-brand-600 hover:text-brand-700 dark:text-brand-400 font-medium max-w-[7rem] truncate"
+                    >
+                      {colesStoreName || (colesStoreId ? `#${colesStoreId}` : "Set store")}
+                    </button>
+                  </div>
                 )}
                 <button
                   onClick={() => toggle(store.id)}
@@ -439,53 +445,44 @@ function StoresTab() {
                   {store.enabled ? "On" : "Off"}
                 </button>
               </div>
+              {store.scraper_module === "coles" && store.enabled && colesPickerOpen && (
+                <div className="ml-10 pb-2 space-y-2">
+                  <form onSubmit={searchColesStores} className="flex gap-2">
+                    <input
+                      autoFocus
+                      type="text"
+                      value={colesPostcode}
+                      onChange={(e) => setColesPostcode(e.target.value)}
+                      placeholder="Postcode"
+                      maxLength={4}
+                      className="w-20 text-xs bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 font-mono"
+                    />
+                    <button type="submit" disabled={colesSearching || colesPostcode.length !== 4} className="flex items-center gap-1 text-xs font-medium bg-brand-500 hover:bg-brand-600 text-white px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-50">
+                      {colesSearching ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+                      Find
+                    </button>
+                    {colesMsg && <span className="text-xs self-center text-red-500">{colesMsg}</span>}
+                  </form>
+                  {colesSearchResults && colesSearchResults.length > 0 && (
+                    <div className="space-y-0.5 max-h-40 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                      {colesSearchResults.map((s) => (
+                        <button
+                          key={s.id}
+                          onClick={() => selectColesStore(s)}
+                          className={`w-full text-left flex items-center gap-2 px-3 py-2 text-xs transition-colors ${colesStoreId === s.id ? "bg-brand-50 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-medium" : "hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"}`}
+                        >
+                          <span className="flex-1">{s.name}</span>
+                          <span className="text-gray-400 shrink-0 truncate max-w-[10rem]">{s.address}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
       </div>
-
-      {stores.some((s) => s.scraper_module === "coles" && s.enabled !== false) && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400">Coles Store</h2>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            Enter your postcode to find your nearest Coles store. Pricing varies by store location.
-          </p>
-          <form onSubmit={searchColesStores} className="flex gap-2">
-            <input
-              type="text"
-              value={colesPostcode}
-              onChange={(e) => setColesPostcode(e.target.value)}
-              placeholder="Postcode"
-              maxLength={4}
-              className="w-24 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 font-mono"
-            />
-            <button type="submit" disabled={colesSearching || colesPostcode.length !== 4} className={btnCls}>
-              {colesSearching ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-              Find stores
-            </button>
-            {colesMsg && <span className={`text-xs self-center ${colesMsg === "Saved" ? "text-brand-600" : "text-red-500"}`}>{colesMsg}</span>}
-          </form>
-          {colesSearchResults && colesSearchResults.length > 0 && (
-            <div className="space-y-1 max-h-48 overflow-y-auto">
-              {colesSearchResults.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => selectColesStore(s)}
-                  className={`w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${colesStoreId === s.id ? "bg-brand-50 dark:bg-brand-950 border border-brand-300 dark:border-brand-700" : "hover:bg-gray-50 dark:hover:bg-gray-700 border border-transparent"}`}
-                >
-                  <span className="flex-1 font-medium text-gray-800 dark:text-gray-100">{s.name}</span>
-                  <span className="text-xs text-gray-400 shrink-0">{s.address}</span>
-                </button>
-              ))}
-            </div>
-          )}
-          {colesStoreId && !colesSearchResults && (
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Current store: <span className="font-medium text-gray-700 dark:text-gray-300">{colesStoreName || `#${colesStoreId}`}</span>
-            </p>
-          )}
-        </div>
-      )}
 
     </div>
   );
@@ -1118,6 +1115,21 @@ function TestEmailModal({ onClose }) {
 }
 
 // ── Shared components ─────────────────────────────────────────────────────────
+
+function InfoTooltip({ text }) {
+  const [show, setShow] = useState(false);
+  return (
+    <span className="relative inline-flex items-center" onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
+      <Info size={12} className="text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400 cursor-help shrink-0" />
+      {show && (
+        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 w-56 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg px-3 py-2 shadow-lg z-50 leading-relaxed pointer-events-none">
+          {text}
+          <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700" />
+        </span>
+      )}
+    </span>
+  );
+}
 
 function Section({ title, description, action, children }) {
   return (
