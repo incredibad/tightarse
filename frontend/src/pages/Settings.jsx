@@ -84,7 +84,7 @@ export default function Settings({ onLogout, user }) {
           rel="noopener noreferrer"
           className="text-xs text-gray-400 hover:text-brand-500 transition-colors font-mono"
         >
-          v0.5.21
+          v0.5.22
         </a>
       </div>
 
@@ -133,6 +133,9 @@ function NotificationsTab({ settings, set, save, saving, saveMsg }) {
   return (
     <div className="space-y-4">
       <Section title="Price Alerts">
+        <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+          You'll be notified when a tracked product's price drops by at least the threshold below, compared to the last recorded price. Alerts fire during scheduled scrapes — enable at least one channel below to receive them.
+        </p>
         <Field label="Alert threshold (% drop)">
           <input
             type="number" min="1" max="100"
