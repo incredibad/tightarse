@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown, ChevronUp, Loader2, ShoppingBag, RotateCcw, Square, CheckSquare, Trash2, ShoppingCart } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2, ShoppingBag, RotateCcw, Square, CheckSquare, Trash2, ShoppingCart, ClipboardList } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import ConfirmModal from "../components/ConfirmModal";
@@ -48,11 +48,18 @@ export default function Journey() {
       const val = rows.find((r) => r.key === "include_checklist_in_journey")?.value;
       setShowChecklist(val !== "false");
     }).catch(() => {});
+
   }, []);
 
   function toggleAlternatives(e, itemId) {
     e.stopPropagation();
     setExpanded((prev) => ({ ...prev, [itemId]: !prev[itemId] }));
+  }
+
+  function toggleChecklist() {
+    const next = !showChecklist;
+    setShowChecklist(next);
+    api.updateSettings({ include_checklist_in_journey: next ? "true" : "false" }).catch(() => {});
   }
 
   function toggleStore(storeId) {
@@ -150,14 +157,28 @@ export default function Journey() {
       )}
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold">Shopping Journey</h1>
-        {checkedItems.size > 0 && (
+        <div className="flex items-center gap-2">
+          {checkedItems.size > 0 && (
+            <button
+              onClick={resetJourney}
+              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              <RotateCcw size={13} /> Reset
+            </button>
+          )}
           <button
-            onClick={resetJourney}
-            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            onClick={toggleChecklist}
+            title={showChecklist ? "Hide checklist" : "Show checklist"}
+            className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors ${
+              showChecklist
+                ? "border-brand-300 dark:border-brand-700 bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300"
+                : "border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+            }`}
           >
-            <RotateCcw size={13} /> Reset
+            <ClipboardList size={13} />
+            {showChecklist ? "Checklist" : "Checklist"}
           </button>
-        )}
+        </div>
       </div>
 
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2.5 shadow-sm flex justify-between items-center">
