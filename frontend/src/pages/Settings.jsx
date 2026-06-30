@@ -64,7 +64,7 @@ export default function Settings({ onLogout, user }) {
     }
   }
 
-  const tabs = isAdmin ? ["General", "Stores", "Notifications", "Account", "Admin"] : ["General", "Stores", "Notifications", "Account"];
+  const tabs = isAdmin ? ["Stores", "Notifications", "Account", "Admin"] : ["Stores", "Notifications", "Account"];
 
   if (loading) {
     return (
@@ -84,7 +84,7 @@ export default function Settings({ onLogout, user }) {
           rel="noopener noreferrer"
           className="text-xs text-gray-400 hover:text-brand-500 transition-colors font-mono"
         >
-          v0.5.12
+          v0.5.13
         </a>
       </div>
 
@@ -104,9 +104,6 @@ export default function Settings({ onLogout, user }) {
         ))}
       </div>
 
-      {tab === "General" && (
-        <GeneralTab settings={settings} set={set} save={save} />
-      )}
       {tab === "Notifications" && (
         <NotificationsTab settings={settings} set={set} save={save} saving={saving} saveMsg={saveMsg} />
       )}
@@ -119,28 +116,6 @@ export default function Settings({ onLogout, user }) {
       {tab === "Admin" && isAdmin && (
         <AdminTab settings={settings} set={set} save={save} saving={saving} saveMsg={saveMsg} />
       )}
-    </div>
-  );
-}
-
-// ── General tab ───────────────────────────────────────────────────────────────
-
-function GeneralTab({ settings, set, save }) {
-  async function toggle(key) {
-    const val = settings[key] === "true" ? "false" : "true";
-    set(key, val);
-    await api.updateSettings({ [key]: val });
-  }
-
-  return (
-    <div className="space-y-3">
-      <Section title="Journey">
-        <Toggle
-          label="Include checklist on Journey page"
-          value={settings.include_checklist_in_journey !== "false"}
-          onChange={() => toggle("include_checklist_in_journey")}
-        />
-      </Section>
     </div>
   );
 }
