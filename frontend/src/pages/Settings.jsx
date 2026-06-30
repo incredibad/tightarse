@@ -84,7 +84,7 @@ export default function Settings({ onLogout, user }) {
           rel="noopener noreferrer"
           className="text-xs text-gray-400 hover:text-brand-500 transition-colors font-mono"
         >
-          v0.5.6
+          v0.5.7
         </a>
       </div>
 
@@ -447,21 +447,23 @@ function StoresTab() {
               </div>
               {store.scraper_module === "coles" && store.enabled && colesPickerOpen && (
                 <div className="ml-10 pb-3">
-                  <form onSubmit={searchColesStores} className="flex items-center gap-2 py-1.5">
-                    <input
-                      autoFocus
-                      type="text"
-                      value={colesPostcode}
-                      onChange={(e) => setColesPostcode(e.target.value)}
-                      placeholder="Postcode"
-                      maxLength={4}
-                      className="w-20 text-xs bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 font-mono"
-                    />
-                    <button type="submit" disabled={colesSearching || colesPostcode.length !== 4} className="flex items-center gap-1 text-xs font-medium bg-brand-500 hover:bg-brand-600 text-white px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-50 shrink-0">
-                      {colesSearching ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-                      Find
-                    </button>
-                    {colesMsg && <span className="text-xs text-red-500">{colesMsg}</span>}
+                  <form onSubmit={searchColesStores}>
+                    <div className="flex items-center gap-2 py-1.5">
+                      <input
+                        autoFocus
+                        type="text"
+                        value={colesPostcode}
+                        onChange={(e) => setColesPostcode(e.target.value)}
+                        placeholder="Postcode"
+                        maxLength={4}
+                        className="w-20 text-xs bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 font-mono"
+                      />
+                      <button type="submit" disabled={colesSearching || colesPostcode.length !== 4} className="flex items-center gap-1 text-xs font-medium bg-brand-500 hover:bg-brand-600 text-white px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-50 shrink-0">
+                        {colesSearching ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+                        Find
+                      </button>
+                      {colesMsg && <span className="text-xs text-red-500">{colesMsg}</span>}
+                    </div>
                   </form>
                   {colesSearchResults && colesSearchResults.length > 0 && (
                     <div className="max-h-40 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700">
