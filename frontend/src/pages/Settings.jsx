@@ -84,7 +84,7 @@ export default function Settings({ onLogout, user }) {
           rel="noopener noreferrer"
           className="text-xs text-gray-400 hover:text-brand-500 transition-colors font-mono"
         >
-          v0.5.9
+          v0.5.10
         </a>
       </div>
 
@@ -409,7 +409,7 @@ function StoresTab() {
                 <span className={`text-sm font-medium flex-1 ${store.enabled ? "text-gray-800 dark:text-gray-100" : "text-gray-400 dark:text-gray-500 line-through"}`}>{store.name}</span>
                 {store.scraper_module === "drakes" && store.enabled && (
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <InfoTooltip text="Only Drakes stores with online ordering are listed here. Not all Drakes locations support online shopping. Use Admin → Drakes Store Map to refresh the list." />
+                    <InfoTooltip text="Only Drakes stores with online ordering are listed here — not all Drakes locations support online shopping." />
                     <button
                       onClick={() => setDrakesPickerOpen((o) => !o)}
                       className="text-xs text-brand-600 hover:text-brand-700 dark:text-brand-400 font-medium max-w-[7rem] truncate"
