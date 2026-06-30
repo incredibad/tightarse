@@ -84,7 +84,7 @@ export default function Settings({ onLogout, user }) {
           rel="noopener noreferrer"
           className="text-xs text-gray-400 hover:text-brand-500 transition-colors font-mono"
         >
-          v0.5.17
+          v0.5.18
         </a>
       </div>
 
@@ -921,6 +921,10 @@ function AdminUsersTab() {
         <div className="space-y-2">
           {users.map((u) => (
             <div key={u.id} className="flex items-center gap-2 py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-0">
+              <span
+                className={`w-2 h-2 rounded-full shrink-0 ${u.last_active_at && (Date.now() - new Date(u.last_active_at + "Z")) < 15 * 60 * 1000 ? "bg-brand-500" : "bg-gray-300 dark:bg-gray-600"}`}
+                title={u.last_active_at && (Date.now() - new Date(u.last_active_at + "Z")) < 15 * 60 * 1000 ? "Active now" : "Offline"}
+              />
               <User size={14} className="text-gray-400 shrink-0" />
               <span className="flex-1 text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{u.username}</span>
               <span className="text-xs text-gray-400 shrink-0 hidden sm:block" title={u.last_login_at ? new Date(u.last_login_at + "Z").toLocaleString() : "Never"}>

@@ -65,6 +65,10 @@ def require_auth(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account disabled")
+    now = datetime.utcnow()
+    if user.last_active_at is None or (now - user.last_active_at) > timedelta(minutes=5):
+        user.last_active_at = now
+        db.commit()
     return user
 
 
