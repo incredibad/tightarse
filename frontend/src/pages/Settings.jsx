@@ -84,7 +84,7 @@ export default function Settings({ onLogout, user }) {
           rel="noopener noreferrer"
           className="text-xs text-gray-400 hover:text-brand-500 transition-colors font-mono"
         >
-          v0.5.8
+          v0.5.9
         </a>
       </div>
 
@@ -278,7 +278,8 @@ function StoresTab() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [drakesStoreId, setDrakesStoreId] = useState("087");
-  const [drakesMsg, setDrakesMsg] = useState("");
+  const [drakesStoreName, setDrakesStoreName] = useState("");
+  const [drakesPickerOpen, setDrakesPickerOpen] = useState(false);
   const [drakesStoreList, setDrakesStoreList] = useState(DRAKES_STORES);
   const [colesStoreId, setColesStoreId] = useState("4670");
   const [colesStoreName, setColesStoreName] = useState("");
@@ -295,6 +296,7 @@ function StoresTab() {
       const [allStores, settings] = await Promise.all([api.getStores(), api.getSettings()]);
       const settingsMap = Object.fromEntries(settings.map((s) => [s.key, s.value]));
       setDrakesStoreId(settingsMap.drakes_store_id || "087");
+      setDrakesStoreName(settingsMap.drakes_store_name || "");
       setColesStoreId(settingsMap.coles_store_id || "");
       setColesStoreName(settingsMap.coles_store_name || "");
       if (settingsMap.drakes_store_map) {
@@ -348,15 +350,11 @@ function StoresTab() {
     persist(next);
   }
 
-  async function saveDrakesStoreId() {
-    setDrakesMsg("");
-    try {
-      await api.updateSettings({ drakes_store_id: drakesStoreId });
-      setDrakesMsg("Saved");
-      setTimeout(() => setDrakesMsg(""), 2000);
-    } catch (e) {
-      setDrakesMsg(e.message);
-    }
+  async function selectDrakesStore(store) {
+    setDrakesStoreId(store.id);
+    setDrakesStoreName(store.name);
+    setDrakesPickerOpen(false);
+    await api.updateSettings({ drakes_store_id: store.id, drakes_store_name: store.name });
   }
 
   async function searchColesStores(e) {
@@ -387,8 +385,6 @@ function StoresTab() {
     }
   }
 
-  const drakesStore = stores.find((s) => s.scraper_module === "drakes");
-
   if (loading) return <div className="flex justify-center items-center h-32"><Loader2 className="animate-spin text-brand-500" size={24} /></div>;
 
   return (
@@ -412,19 +408,15 @@ function StoresTab() {
                 <span className="text-xs font-bold text-gray-400 w-4 text-center shrink-0">{i + 1}</span>
                 <span className={`text-sm font-medium flex-1 ${store.enabled ? "text-gray-800 dark:text-gray-100" : "text-gray-400 dark:text-gray-500 line-through"}`}>{store.name}</span>
                 {store.scraper_module === "drakes" && store.enabled && (
-                  <>
-                    <select
-                      value={drakesStoreId}
-                      onChange={(e) => setDrakesStoreId(e.target.value)}
-                      className="w-32 text-xs bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded px-2 py-1 text-gray-900 dark:text-white"
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <InfoTooltip text="Only Drakes stores with online ordering are listed here. Not all Drakes locations support online shopping. Use Admin → Drakes Store Map to refresh the list." />
+                    <button
+                      onClick={() => setDrakesPickerOpen((o) => !o)}
+                      className="text-xs text-brand-600 hover:text-brand-700 dark:text-brand-400 font-medium max-w-[7rem] truncate"
                     >
-                      {drakesStoreList.map((s) => (
-                        <option key={s.id} value={s.id}>{s.name} ({s.id})</option>
-                      ))}
-                    </select>
-                    <button onClick={saveDrakesStoreId} className="text-xs text-brand-600 hover:text-brand-700 font-medium shrink-0">Save</button>
-                    {drakesMsg && <span className={`text-xs shrink-0 ${drakesMsg === "Saved" ? "text-brand-600" : "text-red-500"}`}>{drakesMsg}</span>}
-                  </>
+                      {drakesStoreName || (drakesStoreId ? drakesStoreList.find(s => s.id === drakesStoreId)?.name || `#${drakesStoreId}` : "Set store")}
+                    </button>
+                  </div>
                 )}
                 {store.scraper_module === "coles" && store.enabled && (
                   <div className="flex items-center gap-1.5 shrink-0">
@@ -469,6 +461,21 @@ function StoresTab() {
                   {store.enabled ? "On" : "Off"}
                 </button>
               </div>
+              {store.scraper_module === "drakes" && store.enabled && drakesPickerOpen && (
+                <div className="absolute left-0 right-0 top-full z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-40 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700">
+                  {drakesStoreList.map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => selectDrakesStore(s)}
+                      className={`w-full text-left flex items-center gap-2 px-3 py-2 text-xs transition-colors ${drakesStoreId === s.id ? "font-semibold text-gray-900 dark:text-white" : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+                    >
+                      <span className="w-3 shrink-0 text-brand-500">{drakesStoreId === s.id ? "✓" : ""}</span>
+                      <span className="flex-1">{s.name}</span>
+                      <span className="text-gray-400 font-mono shrink-0">{s.id}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
               {store.scraper_module === "coles" && store.enabled && colesPickerOpen && colesSearchResults && colesSearchResults.length > 0 && (
                 <div className="absolute left-0 right-0 top-full z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-40 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700">
                   {colesSearchResults.map((s) => (
