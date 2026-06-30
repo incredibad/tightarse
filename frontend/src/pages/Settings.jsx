@@ -84,7 +84,7 @@ export default function Settings({ onLogout, user }) {
           rel="noopener noreferrer"
           className="text-xs text-gray-400 hover:text-brand-500 transition-colors font-mono"
         >
-          v0.5.1
+          v0.5.2
         </a>
       </div>
 
@@ -280,6 +280,8 @@ function StoresTab() {
   const [drakesStoreId, setDrakesStoreId] = useState("087");
   const [drakesMsg, setDrakesMsg] = useState("");
   const [drakesStoreList, setDrakesStoreList] = useState(DRAKES_STORES);
+  const [colesStoreId, setColesStoreId] = useState("4670");
+  const [colesMsg, setColesMsg] = useState("");
 
   useEffect(() => { load(); }, []);
 
@@ -288,6 +290,7 @@ function StoresTab() {
       const [allStores, settings] = await Promise.all([api.getStores(), api.getSettings()]);
       const settingsMap = Object.fromEntries(settings.map((s) => [s.key, s.value]));
       setDrakesStoreId(settingsMap.drakes_store_id || "087");
+      setColesStoreId(settingsMap.coles_store_id || "4670");
       if (settingsMap.drakes_store_map) {
         try {
           const mapped = JSON.parse(settingsMap.drakes_store_map);
@@ -350,6 +353,17 @@ function StoresTab() {
     }
   }
 
+  async function saveColesStoreId() {
+    setColesMsg("");
+    try {
+      await api.updateSettings({ coles_store_id: colesStoreId });
+      setColesMsg("Saved");
+      setTimeout(() => setColesMsg(""), 2000);
+    } catch (e) {
+      setColesMsg(e.message);
+    }
+  }
+
   const drakesStore = stores.find((s) => s.scraper_module === "drakes");
 
   if (loading) return <div className="flex justify-center items-center h-32"><Loader2 className="animate-spin text-brand-500" size={24} /></div>;
@@ -373,7 +387,7 @@ function StoresTab() {
                   <button onClick={() => move(i, 1)} disabled={i === stores.length - 1} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 disabled:opacity-20"><ChevronDown size={14} /></button>
                 </div>
                 <span className="text-xs font-bold text-gray-400 w-4 text-center shrink-0">{i + 1}</span>
-                <span className={`text-sm font-medium ${store.enabled ? "text-gray-800 dark:text-gray-100" : "text-gray-400 dark:text-gray-500 line-through"} ${store.scraper_module === "drakes" && store.enabled ? "" : "flex-1"}`}>{store.name}</span>
+                <span className={`text-sm font-medium ${store.enabled ? "text-gray-800 dark:text-gray-100" : "text-gray-400 dark:text-gray-500 line-through"} ${(store.scraper_module === "drakes" || store.scraper_module === "coles") && store.enabled ? "" : "flex-1"}`}>{store.name}</span>
                 {store.scraper_module === "drakes" && store.enabled && (
                   <>
                     <select
@@ -387,6 +401,19 @@ function StoresTab() {
                     </select>
                     <button onClick={saveDrakesStoreId} className="text-xs text-brand-600 hover:text-brand-700 font-medium shrink-0">Save</button>
                     {drakesMsg && <span className={`text-xs shrink-0 ${drakesMsg === "Saved" ? "text-brand-600" : "text-red-500"}`}>{drakesMsg}</span>}
+                  </>
+                )}
+                {store.scraper_module === "coles" && store.enabled && (
+                  <>
+                    <input
+                      type="text"
+                      value={colesStoreId}
+                      onChange={(e) => setColesStoreId(e.target.value)}
+                      placeholder="Store ID"
+                      className="w-20 text-xs bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded px-2 py-1 text-gray-900 dark:text-white font-mono"
+                    />
+                    <button onClick={saveColesStoreId} className="text-xs text-brand-600 hover:text-brand-700 font-medium shrink-0">Save</button>
+                    {colesMsg && <span className={`text-xs shrink-0 ${colesMsg === "Saved" ? "text-brand-600" : "text-red-500"}`}>{colesMsg}</span>}
                   </>
                 )}
                 <button

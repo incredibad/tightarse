@@ -116,12 +116,17 @@ async def _scrape_url_group(url: str, product_ids: list[int]) -> tuple[int, int]
             scraper_module = products[0].store.scraper_module
             product_names = ", ".join(p.name or f"#{p.id}" for p in products)
             proxy = _resolve_proxy(db, scraper_module)
+            extra: dict = {}
+            if scraper_module == "coles":
+                extra["store_id"] = get_global_setting(db, "coles_store_id") or "4670"
+            if scraper_module == "drakes":
+                extra["store_id"] = get_global_setting(db, "drakes_store_id") or "087"
         finally:
             db.close()
 
         logger.info(f"Scraping [{product_names}] {url}{' via proxy' if proxy else ''}")
         try:
-            scraper = get_scraper(scraper_module, proxy_url=proxy)
+            scraper = get_scraper(scraper_module, proxy_url=proxy, **extra)
         except ValueError as e:
             logger.warning(f"[{product_names}] cannot scrape: {e}")
             return 0, len(product_ids)
