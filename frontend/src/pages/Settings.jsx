@@ -84,7 +84,7 @@ export default function Settings({ onLogout, user }) {
           rel="noopener noreferrer"
           className="text-xs text-gray-400 hover:text-brand-500 transition-colors font-mono"
         >
-          v0.5.11
+          v0.5.12
         </a>
       </div>
 
@@ -436,7 +436,7 @@ function StoresTab() {
                         <button
                           onClick={searchColesStores}
                           disabled={colesSearching || colesPostcode.length !== 4}
-                          className="flex items-center gap-1 text-xs font-medium bg-brand-500 hover:bg-brand-600 text-white px-2 py-0.5 rounded-md transition-colors disabled:opacity-50 shrink-0"
+                          className="flex items-center gap-1 text-xs font-medium bg-brand-700 hover:bg-brand-900 text-white px-2.5 py-1 rounded-md transition-colors disabled:opacity-50 shrink-0"
                         >
                           {colesSearching ? <Loader2 size={11} className="animate-spin" /> : "Find"}
                         </button>
