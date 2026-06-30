@@ -1,14 +1,23 @@
 import re
-import httpx
 from bs4 import BeautifulSoup
+from curl_cffi.requests import AsyncSession
 from .base import BaseScraper, ScrapeResult, infer_cup_price
+
+_IMPERSONATE = "chrome124"
 
 
 class ALDIScraper(BaseScraper):
     store_name = "ALDI"
 
+    def __init__(self, proxy_url: str = ""):
+        proxy_kwargs = {"proxies": {"https://": proxy_url, "http://": proxy_url}} if proxy_url else {}
+        self._session = AsyncSession(impersonate=_IMPERSONATE, **proxy_kwargs)
+
+    async def close(self):
+        await self._session.close()
+
     async def scrape_url(self, url: str) -> ScrapeResult:
-        response = await self.client.get(url)
+        response = await self._session.get(url)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "html.parser")
 
@@ -38,7 +47,7 @@ class ALDIScraper(BaseScraper):
     async def search(self, query: str) -> list[dict]:
         url = "https://www.aldi.com.au/results"
         params = {"q": query}
-        response = await self.client.get(url, params=params)
+        response = await self._session.get(url, params=params)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "html.parser")
 
