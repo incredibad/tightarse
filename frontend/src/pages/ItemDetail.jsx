@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Plus, ArrowLeft, Clock, Loader2, RefreshCw, MoreVertical, ExternalLink, Trash2 } from "lucide-react";
+import { Plus, ArrowLeft, Clock, Loader2, RefreshCw, MoreVertical, ExternalLink, Trash2, Pencil, Check, X } from "lucide-react";
 import { api } from "../api";
 import PriceSparkline from "../components/PriceSparkline";
 import StorePill from "../components/StorePill";
@@ -42,6 +42,9 @@ export default function ItemDetail() {
   const [loading, setLoading] = useState(true);
   const [rescraping, setRescraping] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState("");
+  const nameInputRef = useRef(null);
   const menuRef = useRef(null);
 
   useEffect(() => { loadData(); }, [itemId]);
@@ -72,6 +75,24 @@ export default function ItemDetail() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function startEditingName() {
+    setNameInput(item.name);
+    setEditingName(true);
+    setTimeout(() => nameInputRef.current?.select(), 0);
+  }
+
+  async function saveItemName() {
+    const name = nameInput.trim();
+    if (!name || name === item.name) { setEditingName(false); return; }
+    await api.updateItem(Number(itemId), { name });
+    setItem((prev) => ({ ...prev, name }));
+    setEditingName(false);
+  }
+
+  function cancelEditingName() {
+    setEditingName(false);
   }
 
   async function handleDeleteItem() {
@@ -141,8 +162,27 @@ export default function ItemDetail() {
         <button onClick={() => navigate("/")} className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
           <ArrowLeft size={20} />
         </button>
-        <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-bold truncate">{item.name}</h1>
+        <div className="flex-1 min-w-0 flex items-center gap-1.5">
+          {editingName ? (
+            <>
+              <input
+                ref={nameInputRef}
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") saveItemName(); if (e.key === "Escape") cancelEditingName(); }}
+                className="flex-1 min-w-0 text-xl font-bold bg-transparent border-b-2 border-brand-500 focus:outline-none text-gray-900 dark:text-white"
+              />
+              <button onClick={saveItemName} className="text-brand-600 hover:text-brand-700 shrink-0"><Check size={18} /></button>
+              <button onClick={cancelEditingName} className="text-gray-400 hover:text-gray-600 shrink-0"><X size={16} /></button>
+            </>
+          ) : (
+            <>
+              <h1 className="text-xl font-bold truncate">{item.name}</h1>
+              <button onClick={startEditingName} className="text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 transition-colors shrink-0" title="Rename">
+                <Pencil size={14} />
+              </button>
+            </>
+          )}
         </div>
         <button
           onClick={handleRescrape}
