@@ -42,6 +42,7 @@ class UserOut(BaseModel):
     is_active: bool
     created_at: datetime
     last_login_at: datetime | None = None
+    last_active_at: datetime | None = None
 
     class Config:
         from_attributes = True
