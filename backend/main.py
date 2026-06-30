@@ -17,6 +17,7 @@ from log_buffer import LogBufferHandler
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "frontend")
 
 logging.basicConfig(level=logging.INFO)
+logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 _LOG_FMT = logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
