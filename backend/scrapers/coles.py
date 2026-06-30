@@ -1,4 +1,5 @@
 import asyncio
+import os
 import re
 import httpx
 from .base import BaseScraper, ScrapeResult, infer_cup_price
@@ -10,6 +11,10 @@ _UA = (
     "AppleWebKit/537.36 (KHTML, like Gecko) "
     "Chrome/124.0.0.0 Safari/537.36"
 )
+
+# Store ID used for pricing lookups. Coles' SSR only returns pricing when a
+# fulfillmentStoreId cookie is present. Set COLES_STORE_ID env var to override.
+_STORE_ID = os.environ.get("COLES_STORE_ID", "4670")
 
 # Headers for JSON API calls (XHR/fetch)
 _API_HEADERS = {
@@ -122,17 +127,22 @@ class ColesScraper(BaseScraper):
         if not slug:
             raise ValueError(f"Cannot extract product slug from URL: {url}")
 
+        # The fulfillmentStoreId cookie is required for Coles' SSR to enrich
+        # product pricing — without it, PAY ON SCAN and some other products
+        # return pricing: null in the _next/data JSON response.
+        store_cookie = f"fulfillmentStoreId={_STORE_ID}"
+
         next_url = await self._build_url(f"product/{slug}.json")
         r = await self.client.get(
             next_url,
-            headers={**_API_HEADERS, "Referer": url},
+            headers={**_API_HEADERS, "Referer": url, "Cookie": store_cookie},
         )
         if r.status_code == 404:
             self._build_id = None
             next_url = await self._build_url(f"product/{slug}.json")
             r = await self.client.get(
                 next_url,
-                headers={**_API_HEADERS, "Referer": url},
+                headers={**_API_HEADERS, "Referer": url, "Cookie": store_cookie},
             )
         r.raise_for_status()
 
@@ -148,12 +158,13 @@ class ColesScraper(BaseScraper):
                 next_url = await self._build_url(f"product/{slug}.json")
                 r = await self.client.get(
                     next_url,
-                    headers={**_API_HEADERS, "Referer": f"{_BASE}/product/{slug}"},
+                    headers={**_API_HEADERS, "Referer": f"{_BASE}/product/{slug}", "Cookie": store_cookie},
                 )
                 r.raise_for_status()
                 data = r.json().get("pageProps", {})
 
         product = data.get("product") or {}
+
         name = _full_name(product) or "Unknown product"
         pricing = product.get("pricing") or {}
         on_special = pricing.get("promotionType") == "SPECIAL"
