@@ -344,4 +344,6 @@ def _scraper_kwargs(db: Session, user_id: int, store: Store) -> dict:
     kwargs: dict = {"proxy_url": _resolve_proxy(db, store.scraper_module)}
     if store.scraper_module == "drakes":
         kwargs["store_id"] = get_user_setting(db, user_id, "drakes_store_id") or "087"
+    if store.scraper_module == "coles":
+        kwargs["store_id"] = get_user_setting(db, user_id, "coles_store_id") or get_global_setting(db, "coles_store_id") or "4670"
     return kwargs

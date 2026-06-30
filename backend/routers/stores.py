@@ -173,6 +173,73 @@ async def scan_drakes_stores(_admin: User = Depends(require_admin)):
     return sorted(results, key=lambda r: r.id)
 
 
+class ColesStoreResult(BaseModel):
+    id: str       # numeric only, e.g. "4497"
+    name: str
+    address: str
+
+
+@router.get("/coles-search", response_model=list[ColesStoreResult])
+async def search_coles_stores(postcode: str, _user: User = Depends(require_auth)):
+    if not re.fullmatch(r"\d{4}", postcode):
+        raise HTTPException(status_code=400, detail="postcode must be a 4-digit Australian postcode")
+
+    from scrapers.coles import ColesScraper
+
+    # Geocode postcode via Nominatim (OSM, free, no API key)
+    async with httpx.AsyncClient(timeout=15, follow_redirects=True) as geo_client:
+        try:
+            geo = await geo_client.get(
+                "https://nominatim.openstreetmap.org/search",
+                params={"postalcode": postcode, "country": "AU", "format": "json", "limit": "1"},
+                headers={"User-Agent": "tightarse/1.0 (grocery price tracker)"},
+            )
+            results = geo.json()
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"Geocoding failed: {e}")
+    if not results:
+        raise HTTPException(status_code=404, detail=f"Postcode {postcode} not found")
+    lat = float(results[0]["lat"])
+    lon = float(results[0]["lon"])
+
+    # Query Coles GraphQL via the scraper client (has correct TLS/headers for Coles)
+    scraper = ColesScraper()
+    try:
+        gql_query = (
+            "{stores(latitude:%s,longitude:%s){results{store{id name address{oneLine}}}}}"
+            % (lat, lon)
+        )
+        resp = await scraper.client.post(
+            "https://www.coles.com.au/api/graphql",
+            json={"query": gql_query},
+            headers={
+                "Ocp-Apim-Subscription-Key": "eae83861d1cd4de6bb9cd8a2cd6f041e",
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "Origin": "https://www.coles.com.au",
+            },
+        )
+        data = resp.json()
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Coles store lookup failed: {e}")
+    finally:
+        await scraper.close()
+
+    raw = data.get("data", {}).get("stores", {}).get("results", [])
+    stores = []
+    for item in raw:
+        store = item.get("store", {})
+        sid = store.get("id", "")
+        if not sid.startswith("COL:"):
+            continue  # skip Liquorland, etc.
+        stores.append(ColesStoreResult(
+            id=sid.removeprefix("COL:"),
+            name=store.get("name", ""),
+            address=store.get("address", {}).get("oneLine", ""),
+        ))
+    return stores
+
+
 class DrakeSavePayload(BaseModel):
     stores: list[DrakeStoreResult]
 

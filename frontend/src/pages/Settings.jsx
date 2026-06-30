@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import {
   Sun, Moon, LogOut, Save, RefreshCw, Loader2,
   UserPlus, Trash2, KeyRound, ShieldCheck, ShieldOff, User, Send, X,
-  ChevronUp, ChevronDown, ToggleLeft, ToggleRight, Trash,
+  ChevronUp, ChevronDown, ToggleLeft, ToggleRight, Trash, Info,
 } from "lucide-react";
 import { api } from "../api";
 
@@ -84,7 +84,7 @@ export default function Settings({ onLogout, user }) {
           rel="noopener noreferrer"
           className="text-xs text-gray-400 hover:text-brand-500 transition-colors font-mono"
         >
-          v0.5.0
+          v0.5.14
         </a>
       </div>
 
@@ -253,8 +253,16 @@ function StoresTab() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [drakesStoreId, setDrakesStoreId] = useState("087");
-  const [drakesMsg, setDrakesMsg] = useState("");
+  const [drakesStoreName, setDrakesStoreName] = useState("");
+  const [drakesPickerOpen, setDrakesPickerOpen] = useState(false);
   const [drakesStoreList, setDrakesStoreList] = useState(DRAKES_STORES);
+  const [colesStoreId, setColesStoreId] = useState("4670");
+  const [colesStoreName, setColesStoreName] = useState("");
+  const [colesMsg, setColesMsg] = useState("");
+  const [colesPickerOpen, setColesPickerOpen] = useState(false);
+  const [colesPostcode, setColesPostcode] = useState("");
+  const [colesSearchResults, setColesSearchResults] = useState(null);
+  const [colesSearching, setColesSearching] = useState(false);
 
   useEffect(() => { load(); }, []);
 
@@ -263,6 +271,9 @@ function StoresTab() {
       const [allStores, settings] = await Promise.all([api.getStores(), api.getSettings()]);
       const settingsMap = Object.fromEntries(settings.map((s) => [s.key, s.value]));
       setDrakesStoreId(settingsMap.drakes_store_id || "087");
+      setDrakesStoreName(settingsMap.drakes_store_name || "");
+      setColesStoreId(settingsMap.coles_store_id || "");
+      setColesStoreName(settingsMap.coles_store_name || "");
       if (settingsMap.drakes_store_map) {
         try {
           const mapped = JSON.parse(settingsMap.drakes_store_map);
@@ -314,18 +325,40 @@ function StoresTab() {
     persist(next);
   }
 
-  async function saveDrakesStoreId() {
-    setDrakesMsg("");
+  async function selectDrakesStore(store) {
+    setDrakesStoreId(store.id);
+    setDrakesStoreName(store.name);
+    setDrakesPickerOpen(false);
+    await api.updateSettings({ drakes_store_id: store.id, drakes_store_name: store.name });
+  }
+
+  async function searchColesStores(e) {
+    e?.preventDefault();
+    setColesSearching(true); setColesSearchResults(null); setColesMsg("");
     try {
-      await api.updateSettings({ drakes_store_id: drakesStoreId });
-      setDrakesMsg("Saved");
-      setTimeout(() => setDrakesMsg(""), 2000);
-    } catch (e) {
-      setDrakesMsg(e.message);
+      const results = await api.searchColesStores(colesPostcode);
+      setColesSearchResults(results);
+      if (!results.length) setColesMsg("No Coles stores found near that postcode");
+    } catch (err) {
+      setColesMsg(err.message);
+    } finally {
+      setColesSearching(false);
     }
   }
 
-  const drakesStore = stores.find((s) => s.scraper_module === "drakes");
+  async function selectColesStore(store) {
+    setColesStoreId(store.id);
+    setColesStoreName(store.name);
+    setColesSearchResults(null);
+    setColesPostcode("");
+    setColesPickerOpen(false);
+    setColesMsg("");
+    try {
+      await api.updateSettings({ coles_store_id: store.id, coles_store_name: store.name });
+    } catch (e) {
+      setColesMsg(e.message);
+    }
+  }
 
   if (loading) return <div className="flex justify-center items-center h-32"><Loader2 className="animate-spin text-brand-500" size={24} /></div>;
 
@@ -341,28 +374,59 @@ function StoresTab() {
         {saving && <p className="text-xs text-brand-500">Saving…</p>}
         <div className="space-y-0 pt-1">
           {stores.filter((s) => s.available !== false).map((store, i) => (
-            <div key={store.id} className="border-b border-gray-100 dark:border-gray-700 last:border-0">
+            <div key={store.id} className="border-b border-gray-100 dark:border-gray-700 last:border-0 relative">
               <div className="flex items-center gap-2 py-1.5">
                 <div className="flex flex-col gap-0.5 shrink-0">
                   <button onClick={() => move(i, -1)} disabled={i === 0} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 disabled:opacity-20"><ChevronUp size={14} /></button>
                   <button onClick={() => move(i, 1)} disabled={i === stores.length - 1} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 disabled:opacity-20"><ChevronDown size={14} /></button>
                 </div>
                 <span className="text-xs font-bold text-gray-400 w-4 text-center shrink-0">{i + 1}</span>
-                <span className={`text-sm font-medium ${store.enabled ? "text-gray-800 dark:text-gray-100" : "text-gray-400 dark:text-gray-500 line-through"} ${store.scraper_module === "drakes" && store.enabled ? "" : "flex-1"}`}>{store.name}</span>
+                <span className={`text-sm font-medium flex-1 ${store.enabled ? "text-gray-800 dark:text-gray-100" : "text-gray-400 dark:text-gray-500 line-through"}`}>{store.name}</span>
                 {store.scraper_module === "drakes" && store.enabled && (
-                  <>
-                    <select
-                      value={drakesStoreId}
-                      onChange={(e) => setDrakesStoreId(e.target.value)}
-                      className="flex-1 min-w-0 text-xs bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded px-2 py-1 text-gray-900 dark:text-white"
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <InfoTooltip text="Only Drakes stores with online ordering are listed here — not all Drakes locations support online shopping." />
+                    <button
+                      onClick={() => setDrakesPickerOpen((o) => !o)}
+                      className="text-xs text-brand-600 hover:text-brand-700 dark:text-brand-400 font-medium max-w-[7rem] truncate"
                     >
-                      {drakesStoreList.map((s) => (
-                        <option key={s.id} value={s.id}>{s.name} ({s.id})</option>
-                      ))}
-                    </select>
-                    <button onClick={saveDrakesStoreId} className="text-xs text-brand-600 hover:text-brand-700 font-medium shrink-0">Save</button>
-                    {drakesMsg && <span className={`text-xs shrink-0 ${drakesMsg === "Saved" ? "text-brand-600" : "text-red-500"}`}>{drakesMsg}</span>}
-                  </>
+                      {drakesStoreName || (drakesStoreId ? drakesStoreList.find(s => s.id === drakesStoreId)?.name || `#${drakesStoreId}` : "Set store")}
+                    </button>
+                  </div>
+                )}
+                {store.scraper_module === "coles" && store.enabled && (
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <InfoTooltip text="Pricing may vary by store. Some Coles products aren't priced online — we fall back to in-store pricing for these. Set your nearest store so prices are accurate." />
+                    {colesPickerOpen ? (
+                      <>
+                        <input
+                          autoFocus
+                          type="text"
+                          value={colesPostcode}
+                          onChange={(e) => setColesPostcode(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Escape") { setColesPickerOpen(false); setColesSearchResults(null); } }}
+                          placeholder="Postcode"
+                          maxLength={4}
+                          className="w-16 text-xs bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded px-2 py-0.5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-brand-500 font-mono"
+                        />
+                        <button
+                          onClick={searchColesStores}
+                          disabled={colesSearching || colesPostcode.length !== 4}
+                          className="flex items-center gap-1 text-xs font-medium bg-brand-700 hover:bg-brand-900 text-white px-2.5 py-1 rounded-md transition-colors disabled:opacity-50 shrink-0"
+                        >
+                          {colesSearching ? <Loader2 size={11} className="animate-spin" /> : "Find"}
+                        </button>
+                        <button onClick={() => { setColesPickerOpen(false); setColesSearchResults(null); }} className="text-gray-400 hover:text-gray-600 shrink-0"><X size={12} /></button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => { setColesPickerOpen(true); setColesSearchResults(null); setColesMsg(""); }}
+                        className="text-xs text-brand-600 hover:text-brand-700 dark:text-brand-400 font-medium max-w-[7rem] truncate"
+                      >
+                        {colesStoreName || (colesStoreId ? `#${colesStoreId}` : "Set store")}
+                      </button>
+                    )}
+                    {colesMsg && !colesPickerOpen && <span className="text-xs text-red-500 shrink-0">{colesMsg}</span>}
+                  </div>
                 )}
                 <button
                   onClick={() => toggle(store.id)}
@@ -372,6 +436,36 @@ function StoresTab() {
                   {store.enabled ? "On" : "Off"}
                 </button>
               </div>
+              {store.scraper_module === "drakes" && store.enabled && drakesPickerOpen && (
+                <div className="absolute left-0 right-0 top-full z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-40 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700">
+                  {drakesStoreList.map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => selectDrakesStore(s)}
+                      className={`w-full text-left flex items-center gap-2 px-3 py-2 text-xs transition-colors ${drakesStoreId === s.id ? "font-semibold text-gray-900 dark:text-white" : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+                    >
+                      <span className="w-3 shrink-0 text-brand-500">{drakesStoreId === s.id ? "✓" : ""}</span>
+                      <span className="flex-1">{s.name}</span>
+                      <span className="text-gray-400 font-mono shrink-0">{s.id}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {store.scraper_module === "coles" && store.enabled && colesPickerOpen && colesSearchResults && colesSearchResults.length > 0 && (
+                <div className="absolute left-0 right-0 top-full z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-40 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700">
+                  {colesSearchResults.map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => selectColesStore(s)}
+                      className={`w-full text-left flex items-center gap-2 px-3 py-2 text-xs transition-colors ${colesStoreId === s.id ? "font-semibold text-gray-900 dark:text-white" : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+                    >
+                      <span className="w-3 shrink-0 text-brand-500">{colesStoreId === s.id ? "✓" : ""}</span>
+                      <span className="flex-1">{s.name}</span>
+                      <span className="text-gray-400 shrink-0 truncate max-w-[10rem]">{s.address}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -1008,6 +1102,21 @@ function TestEmailModal({ onClose }) {
 }
 
 // ── Shared components ─────────────────────────────────────────────────────────
+
+function InfoTooltip({ text }) {
+  const [show, setShow] = useState(false);
+  return (
+    <span className="relative inline-flex items-center" onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
+      <Info size={12} className="text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400 cursor-help shrink-0" />
+      {show && (
+        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 w-56 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg px-3 py-2 shadow-lg z-50 leading-relaxed pointer-events-none">
+          {text}
+          <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700" />
+        </span>
+      )}
+    </span>
+  );
+}
 
 function Section({ title, description, action, children }) {
   return (

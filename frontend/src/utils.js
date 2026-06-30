@@ -24,8 +24,9 @@ export function normalizeCupPrice(price, label) {
     return price / (/^l/.test(vm[2]) && vm[2] !== "ml" ? qty * 1000 : qty);
   }
 
-  // Count-based units: sheets, ea, tabs, capsules, etc.
-  const cm = l.match(/per(\d+\.?\d*)(sheets?|ea|tabs?|capsules?|wipes?|serves?|servings?|units?)/);
+  // Count-based units: sheets, tabs, capsules, etc. — exclude ea/each/unit which
+  // are just "it costs $X each" and add no comparison value for fresh produce.
+  const cm = l.match(/per(\d+\.?\d*)(sheets?|tabs?|capsules?|wipes?|serves?|servings?)/);
   if (cm) {
     const qty = parseFloat(cm[1]) || 1;
     return price / qty;
@@ -56,12 +57,11 @@ export function formatCupPrice(price, label) {
   }
 
   // Count-based units — normalise display to per 100 units
-  const cm = l.match(/per(\d+\.?\d*)(sheets?|ea|tabs?|capsules?|wipes?|serves?|servings?|units?)/);
+  const cm = l.match(/per(\d+\.?\d*)(sheets?|tabs?|capsules?|wipes?|serves?|servings?)/);
   if (cm) {
     const qty = parseFloat(cm[1]) || 1;
     const unitWord = cm[2].replace(/s$/, ""); // singular
-    const displayUnit = unitWord === "ea" ? "unit" : unitWord;
-    return `$${(price / qty * 100).toFixed(2)}/100 ${displayUnit}s`;
+    return `$${(price / qty * 100).toFixed(2)}/100 ${unitWord}s`;
   }
 
   return null;

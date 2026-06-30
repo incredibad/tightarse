@@ -96,6 +96,7 @@ export const api = {
   reorderStores: (order) => request("/stores/reorder", { method: "POST", body: { order } }),
   scanDrakesStores: () => request("/stores/drakes-scan"),
   saveDrakesStores: (stores) => request("/stores/drakes-save", { method: "POST", body: { stores } }),
+  searchColesStores: (postcode) => request(`/stores/coles-search?postcode=${encodeURIComponent(postcode)}`),
 
   // Journey
   getJourney: () => request("/journey/"),
