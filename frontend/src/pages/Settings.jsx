@@ -84,7 +84,7 @@ export default function Settings({ onLogout, user }) {
           rel="noopener noreferrer"
           className="text-xs text-gray-400 hover:text-brand-500 transition-colors font-mono"
         >
-          v0.5.16
+          v0.5.17
         </a>
       </div>
 
@@ -923,13 +923,13 @@ function AdminUsersTab() {
             <div key={u.id} className="flex items-center gap-2 py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-0">
               <User size={14} className="text-gray-400 shrink-0" />
               <span className="flex-1 text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{u.username}</span>
+              <span className="text-xs text-gray-400 shrink-0 hidden sm:block" title={u.last_login_at ? new Date(u.last_login_at + "Z").toLocaleString() : "Never"}>
+                {u.last_login_at ? `Last login ${timeAgo(u.last_login_at + "Z")}` : "Never logged in"}
+              </span>
               <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${u.role === "admin" ? "bg-brand-100 text-brand-700 dark:bg-brand-900 dark:text-brand-300" : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"}`}>
                 {u.role}
               </span>
               {!u.is_active && <span className="text-xs text-red-400 shrink-0">disabled</span>}
-              <span className="text-xs text-gray-400 shrink-0 hidden sm:block" title={u.last_login_at ? new Date(u.last_login_at + "Z").toLocaleString() : "Never"}>
-                {u.last_login_at ? `Last login ${timeAgo(u.last_login_at + "Z")}` : "Never logged in"}
-              </span>
               <button onClick={() => { setResetTarget(u); setResetPw(""); setResetMsg(""); }} className="p-1 text-gray-400 hover:text-brand-600 shrink-0" title="Reset password"><KeyRound size={14} /></button>
               <button onClick={() => toggleActive(u)} className="p-1 text-gray-400 hover:text-yellow-500 shrink-0" title={u.is_active ? "Disable" : "Enable"}>
                 {u.is_active ? <ShieldOff size={14} /> : <ShieldCheck size={14} />}
