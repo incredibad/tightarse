@@ -84,7 +84,7 @@ export default function Settings({ onLogout, user }) {
           rel="noopener noreferrer"
           className="text-xs text-gray-400 hover:text-brand-500 transition-colors font-mono"
         >
-          v0.5.15
+          v0.5.16
         </a>
       </div>
 
@@ -927,6 +927,9 @@ function AdminUsersTab() {
                 {u.role}
               </span>
               {!u.is_active && <span className="text-xs text-red-400 shrink-0">disabled</span>}
+              <span className="text-xs text-gray-400 shrink-0 hidden sm:block" title={u.last_login_at ? new Date(u.last_login_at + "Z").toLocaleString() : "Never"}>
+                {u.last_login_at ? `Last login ${timeAgo(u.last_login_at + "Z")}` : "Never logged in"}
+              </span>
               <button onClick={() => { setResetTarget(u); setResetPw(""); setResetMsg(""); }} className="p-1 text-gray-400 hover:text-brand-600 shrink-0" title="Reset password"><KeyRound size={14} /></button>
               <button onClick={() => toggleActive(u)} className="p-1 text-gray-400 hover:text-yellow-500 shrink-0" title={u.is_active ? "Disable" : "Enable"}>
                 {u.is_active ? <ShieldOff size={14} /> : <ShieldCheck size={14} />}

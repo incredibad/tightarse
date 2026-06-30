@@ -120,6 +120,7 @@ class User(Base):
     role = Column(String, default="user")  # "admin" | "user"
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    last_login_at = Column(DateTime, nullable=True)
 
     settings = relationship("UserSetting", back_populates="user", cascade="all, delete-orphan")
     checklist_items = relationship("ChecklistItem", back_populates="user", cascade="all, delete-orphan")
@@ -240,6 +241,7 @@ def _migrate_db():
         "CREATE TABLE IF NOT EXISTS checklist_items (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, name TEXT NOT NULL, checked INTEGER NOT NULL DEFAULT 0, position INTEGER NOT NULL DEFAULT 0, created_at TEXT)",
         "CREATE TABLE IF NOT EXISTS vpn_check_history (id INTEGER PRIMARY KEY AUTOINCREMENT, ip TEXT NOT NULL, org TEXT, city TEXT, country TEXT, checked_at TEXT)",
         "CREATE TABLE IF NOT EXISTS scrape_run_history (id INTEGER PRIMARY KEY AUTOINCREMENT, started_at TEXT NOT NULL, success INTEGER NOT NULL DEFAULT 0, failed INTEGER NOT NULL DEFAULT 0)",
+        "ALTER TABLE users ADD COLUMN last_login_at DATETIME",
     ]
     with engine.connect() as conn:
         for sql in migrations:
