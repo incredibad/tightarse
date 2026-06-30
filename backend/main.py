@@ -19,7 +19,7 @@ FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "frontend")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-_LOG_FMT = logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s", datefmt="%H:%M:%S")
+_LOG_FMT = logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 
 _buf_handler = LogBufferHandler()
 _buf_handler.setFormatter(_LOG_FMT)
