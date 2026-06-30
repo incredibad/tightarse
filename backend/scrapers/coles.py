@@ -11,6 +11,8 @@ _UA = (
     "Chrome/124.0.0.0 Safari/537.36"
 )
 
+_DEFAULT_STORE_ID = "4670"
+
 # Headers for JSON API calls (XHR/fetch)
 _API_HEADERS = {
     "User-Agent": _UA,
@@ -37,6 +39,10 @@ def _extract_slug(url: str) -> str | None:
 class ColesScraper(BaseScraper):
     store_name = "Coles"
     _build_id: str | None = None
+
+    def __init__(self, store_id: str = _DEFAULT_STORE_ID, proxy_url: str = ""):
+        super().__init__(proxy_url=proxy_url)
+        self.store_id = store_id or _DEFAULT_STORE_ID
 
     async def _get_build_id(self) -> str:
         """Fetch the current Next.js buildId via curl (bypasses TLS fingerprint detection).
@@ -122,17 +128,22 @@ class ColesScraper(BaseScraper):
         if not slug:
             raise ValueError(f"Cannot extract product slug from URL: {url}")
 
+        # The fulfillmentStoreId cookie is required for Coles' SSR to enrich
+        # product pricing — without it, PAY ON SCAN and some other products
+        # return pricing: null in the _next/data JSON response.
+        store_cookie = f"fulfillmentStoreId={self.store_id}"
+
         next_url = await self._build_url(f"product/{slug}.json")
         r = await self.client.get(
             next_url,
-            headers={**_API_HEADERS, "Referer": url},
+            headers={**_API_HEADERS, "Referer": url, "Cookie": store_cookie},
         )
         if r.status_code == 404:
             self._build_id = None
             next_url = await self._build_url(f"product/{slug}.json")
             r = await self.client.get(
                 next_url,
-                headers={**_API_HEADERS, "Referer": url},
+                headers={**_API_HEADERS, "Referer": url, "Cookie": store_cookie},
             )
         r.raise_for_status()
 
@@ -148,12 +159,13 @@ class ColesScraper(BaseScraper):
                 next_url = await self._build_url(f"product/{slug}.json")
                 r = await self.client.get(
                     next_url,
-                    headers={**_API_HEADERS, "Referer": f"{_BASE}/product/{slug}"},
+                    headers={**_API_HEADERS, "Referer": f"{_BASE}/product/{slug}", "Cookie": store_cookie},
                 )
                 r.raise_for_status()
                 data = r.json().get("pageProps", {})
 
         product = data.get("product") or {}
+
         name = _full_name(product) or "Unknown product"
         pricing = product.get("pricing") or {}
         on_special = pricing.get("promotionType") == "SPECIAL"
