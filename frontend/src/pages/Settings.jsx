@@ -84,7 +84,7 @@ export default function Settings({ onLogout, user }) {
           rel="noopener noreferrer"
           className="text-xs text-gray-400 hover:text-brand-500 transition-colors font-mono"
         >
-          v0.5.2
+          v0.5.3
         </a>
       </div>
 
@@ -281,7 +281,11 @@ function StoresTab() {
   const [drakesMsg, setDrakesMsg] = useState("");
   const [drakesStoreList, setDrakesStoreList] = useState(DRAKES_STORES);
   const [colesStoreId, setColesStoreId] = useState("4670");
+  const [colesStoreName, setColesStoreName] = useState("");
   const [colesMsg, setColesMsg] = useState("");
+  const [colesPostcode, setColesPostcode] = useState("");
+  const [colesSearchResults, setColesSearchResults] = useState(null);
+  const [colesSearching, setColesSearching] = useState(false);
 
   useEffect(() => { load(); }, []);
 
@@ -290,7 +294,8 @@ function StoresTab() {
       const [allStores, settings] = await Promise.all([api.getStores(), api.getSettings()]);
       const settingsMap = Object.fromEntries(settings.map((s) => [s.key, s.value]));
       setDrakesStoreId(settingsMap.drakes_store_id || "087");
-      setColesStoreId(settingsMap.coles_store_id || "4670");
+      setColesStoreId(settingsMap.coles_store_id || "");
+      setColesStoreName(settingsMap.coles_store_name || "");
       if (settingsMap.drakes_store_map) {
         try {
           const mapped = JSON.parse(settingsMap.drakes_store_map);
@@ -353,10 +358,28 @@ function StoresTab() {
     }
   }
 
-  async function saveColesStoreId() {
+  async function searchColesStores(e) {
+    e.preventDefault();
+    setColesSearching(true); setColesSearchResults(null); setColesMsg("");
+    try {
+      const results = await api.searchColesStores(colesPostcode);
+      setColesSearchResults(results);
+      if (!results.length) setColesMsg("No Coles stores found near that postcode");
+    } catch (err) {
+      setColesMsg(err.message);
+    } finally {
+      setColesSearching(false);
+    }
+  }
+
+  async function selectColesStore(store) {
+    setColesStoreId(store.id);
+    setColesStoreName(store.name);
+    setColesSearchResults(null);
+    setColesPostcode("");
     setColesMsg("");
     try {
-      await api.updateSettings({ coles_store_id: colesStoreId });
+      await api.updateSettings({ coles_store_id: store.id, coles_store_name: store.name });
       setColesMsg("Saved");
       setTimeout(() => setColesMsg(""), 2000);
     } catch (e) {
@@ -387,13 +410,13 @@ function StoresTab() {
                   <button onClick={() => move(i, 1)} disabled={i === stores.length - 1} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 disabled:opacity-20"><ChevronDown size={14} /></button>
                 </div>
                 <span className="text-xs font-bold text-gray-400 w-4 text-center shrink-0">{i + 1}</span>
-                <span className={`text-sm font-medium ${store.enabled ? "text-gray-800 dark:text-gray-100" : "text-gray-400 dark:text-gray-500 line-through"} ${(store.scraper_module === "drakes" || store.scraper_module === "coles") && store.enabled ? "" : "flex-1"}`}>{store.name}</span>
+                <span className={`text-sm font-medium flex-1 ${store.enabled ? "text-gray-800 dark:text-gray-100" : "text-gray-400 dark:text-gray-500 line-through"}`}>{store.name}</span>
                 {store.scraper_module === "drakes" && store.enabled && (
                   <>
                     <select
                       value={drakesStoreId}
                       onChange={(e) => setDrakesStoreId(e.target.value)}
-                      className="flex-1 min-w-0 text-xs bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded px-2 py-1 text-gray-900 dark:text-white"
+                      className="w-32 text-xs bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded px-2 py-1 text-gray-900 dark:text-white"
                     >
                       {drakesStoreList.map((s) => (
                         <option key={s.id} value={s.id}>{s.name} ({s.id})</option>
@@ -404,17 +427,9 @@ function StoresTab() {
                   </>
                 )}
                 {store.scraper_module === "coles" && store.enabled && (
-                  <>
-                    <input
-                      type="text"
-                      value={colesStoreId}
-                      onChange={(e) => setColesStoreId(e.target.value)}
-                      placeholder="Store ID"
-                      className="w-20 text-xs bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded px-2 py-1 text-gray-900 dark:text-white font-mono"
-                    />
-                    <button onClick={saveColesStoreId} className="text-xs text-brand-600 hover:text-brand-700 font-medium shrink-0">Save</button>
-                    {colesMsg && <span className={`text-xs shrink-0 ${colesMsg === "Saved" ? "text-brand-600" : "text-red-500"}`}>{colesMsg}</span>}
-                  </>
+                  <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0 truncate max-w-[8rem]">
+                    {colesStoreName || (colesStoreId ? `#${colesStoreId}` : "No store set")}
+                  </span>
                 )}
                 <button
                   onClick={() => toggle(store.id)}
@@ -428,6 +443,49 @@ function StoresTab() {
           ))}
         </div>
       </div>
+
+      {stores.some((s) => s.scraper_module === "coles" && s.enabled !== false) && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400">Coles Store</h2>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Enter your postcode to find your nearest Coles store. Pricing varies by store location.
+          </p>
+          <form onSubmit={searchColesStores} className="flex gap-2">
+            <input
+              type="text"
+              value={colesPostcode}
+              onChange={(e) => setColesPostcode(e.target.value)}
+              placeholder="Postcode"
+              maxLength={4}
+              className="w-24 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 font-mono"
+            />
+            <button type="submit" disabled={colesSearching || colesPostcode.length !== 4} className={btnCls}>
+              {colesSearching ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+              Find stores
+            </button>
+            {colesMsg && <span className={`text-xs self-center ${colesMsg === "Saved" ? "text-brand-600" : "text-red-500"}`}>{colesMsg}</span>}
+          </form>
+          {colesSearchResults && colesSearchResults.length > 0 && (
+            <div className="space-y-1 max-h-48 overflow-y-auto">
+              {colesSearchResults.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => selectColesStore(s)}
+                  className={`w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${colesStoreId === s.id ? "bg-brand-50 dark:bg-brand-950 border border-brand-300 dark:border-brand-700" : "hover:bg-gray-50 dark:hover:bg-gray-700 border border-transparent"}`}
+                >
+                  <span className="flex-1 font-medium text-gray-800 dark:text-gray-100">{s.name}</span>
+                  <span className="text-xs text-gray-400 shrink-0">{s.address}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          {colesStoreId && !colesSearchResults && (
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Current store: <span className="font-medium text-gray-700 dark:text-gray-300">{colesStoreName || `#${colesStoreId}`}</span>
+            </p>
+          )}
+        </div>
+      )}
 
     </div>
   );
