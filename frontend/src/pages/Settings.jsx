@@ -84,7 +84,7 @@ export default function Settings({ onLogout, user }) {
           rel="noopener noreferrer"
           className="text-xs text-gray-400 hover:text-brand-500 transition-colors font-mono"
         >
-          v0.5.18
+          v0.5.19
         </a>
       </div>
 
@@ -921,14 +921,10 @@ function AdminUsersTab() {
         <div className="space-y-2">
           {users.map((u) => (
             <div key={u.id} className="flex items-center gap-2 py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-0">
-              <span
-                className={`w-2 h-2 rounded-full shrink-0 ${u.last_active_at && (Date.now() - new Date(u.last_active_at + "Z")) < 15 * 60 * 1000 ? "bg-brand-500" : "bg-gray-300 dark:bg-gray-600"}`}
-                title={u.last_active_at && (Date.now() - new Date(u.last_active_at + "Z")) < 15 * 60 * 1000 ? "Active now" : "Offline"}
-              />
               <User size={14} className="text-gray-400 shrink-0" />
               <span className="flex-1 text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{u.username}</span>
-              <span className="text-xs text-gray-400 shrink-0 hidden sm:block" title={u.last_login_at ? new Date(u.last_login_at + "Z").toLocaleString() : "Never"}>
-                {u.last_login_at ? `Last login ${timeAgo(u.last_login_at + "Z")}` : "Never logged in"}
+              <span className="text-xs text-gray-400 shrink-0 hidden sm:block" title={u.last_active_at ? new Date(u.last_active_at + "Z").toLocaleString() : (u.last_login_at ? new Date(u.last_login_at + "Z").toLocaleString() : "Never")}>
+                {u.last_active_at ? `Seen ${timeAgo(u.last_active_at + "Z")}` : u.last_login_at ? `Logged in ${timeAgo(u.last_login_at + "Z")}` : "Never seen"}
               </span>
               <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${u.role === "admin" ? "bg-brand-100 text-brand-700 dark:bg-brand-900 dark:text-brand-300" : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"}`}>
                 {u.role}
