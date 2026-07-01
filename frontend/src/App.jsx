@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Routes, Route, NavLink } from "react-router-dom";
-import { List, Settings, Map, Loader2, CircleDollarSign, X, TriangleAlert, CheckSquare } from "lucide-react";
+import { List, Settings, Map, Loader2, X, TriangleAlert, CheckSquare } from "lucide-react";
 import { api, clearToken, setUser, getUser } from "./api";
 import Setup from "./pages/Setup";
 import Login from "./pages/Login";
@@ -151,7 +151,7 @@ export default function App() {
     <div className="min-h-screen flex flex-col">
       <header className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-2">
-          <CircleDollarSign className="text-brand-600 dark:text-brand-500" size={26} />
+          <img src="/logo.png" alt="" className="h-7 w-auto" />
           <span className="font-bold text-lg tracking-tight">Tightarse</span>
         </div>
       </header>
