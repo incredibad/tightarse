@@ -1,14 +1,10 @@
 FROM node:20 AS frontend-build
 
-RUN apt-get update -qq && apt-get install -y -qq librsvg2-bin
-
 WORKDIR /app
 COPY frontend/package*.json ./
 RUN npm install
 
 COPY frontend/ .
-RUN rsvg-convert -w 192 -h 192 public/icon.svg -o public/icons/icon-192.png && \
-    rsvg-convert -w 512 -h 512 public/icon.svg -o public/icons/icon-512.png
 RUN npm run build
 
 
