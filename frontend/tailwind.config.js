@@ -4,6 +4,9 @@ export default {
   darkMode: "class",
   theme: {
     extend: {
+      fontFamily: {
+        logo: ["Fredoka", "sans-serif"],
+      },
       colors: {
         brand: {
           50: "#fef8ec",
