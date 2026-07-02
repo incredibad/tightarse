@@ -156,7 +156,9 @@ export default function Journey() {
         />
       )}
       <div className="flex items-center justify-between">
-        <h1 className="page-header text-xl">Shopping Journey</h1>
+        <h1 className="page-header text-xl">
+          Journey <span className="text-gray-400 dark:text-gray-500 font-normal">(${journey.estimated_total.toFixed(2)})</span>
+        </h1>
         <div className="flex items-center gap-2">
           {checkedItems.size > 0 && (
             <button
@@ -179,11 +181,6 @@ export default function Journey() {
             Checklist
           </button>
         </div>
-      </div>
-
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 shadow-sm flex justify-between items-center">
-        <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">Estimated total</p>
-        <p className="text-xs font-bold text-gray-900 dark:text-white">${journey.estimated_total.toFixed(2)}</p>
       </div>
 
       {/* Checklist accordion */}
