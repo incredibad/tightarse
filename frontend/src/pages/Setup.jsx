@@ -37,8 +37,8 @@ export default function Setup({ onComplete }) {
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <img src="/logo.png" alt="" className="h-9 w-auto" />
-            <span className="text-2xl font-bold tracking-tight">Tightarse</span>
+            <img src="/logo.png" alt="" className="h-8 w-auto" />
+            <span className="font-logo font-bold text-2xl tracking-wide uppercase text-brand-500">Tightarse</span>
           </div>
           <p className="text-gray-500 dark:text-gray-400 text-sm">Create your admin account to get started.</p>
         </div>
