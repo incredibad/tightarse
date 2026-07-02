@@ -6,7 +6,7 @@ export default function ConfirmModal({ title, message, confirmLabel = "Confirm",
         onClick={(e) => e.stopPropagation()}
       >
         <div>
-          <h3 className="text-base font-semibold text-gray-900 dark:text-white">{title}</h3>
+          <h3 className="font-logo text-base font-semibold text-gray-900 dark:text-white">{title}</h3>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{message}</p>
         </div>
         <div className="flex gap-2 justify-end">

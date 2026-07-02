@@ -164,7 +164,7 @@ export default function ProductHistory() {
         </button>
         <div className="flex-1 min-w-0">
           <p className="text-xs text-gray-400 mb-0.5">Price history</p>
-          <h1 className="text-base font-bold truncate leading-tight">{product?.name ?? "Product"}</h1>
+          <h1 className="font-logo text-base font-semibold truncate leading-tight">{product?.name ?? "Product"}</h1>
         </div>
         {product && <StorePill name={product.store_name} long />}
       </div>

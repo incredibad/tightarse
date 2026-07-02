@@ -78,7 +78,7 @@ export default function ShoppingList() {
   return (
     <div className="p-3 space-y-3">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Shopping List</h1>
+        <h1 className="font-logo text-xl font-semibold">Shopping List</h1>
         <div className="flex items-center gap-2">
           <button
             onClick={handleRescrapeAll}
@@ -116,7 +116,7 @@ export default function ShoppingList() {
 
       {showAddForm && (
         <form onSubmit={handleAddItem} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-3 shadow-sm">
-          <h2 className="font-semibold text-gray-800 dark:text-gray-200">New item</h2>
+          <h2 className="font-logo font-semibold text-gray-800 dark:text-gray-200">New item</h2>
           <input
             autoFocus
             value={newName}
