@@ -66,6 +66,99 @@ export function Tooltip({ content, children }) {
 }
 
 const HOVER_POPUP_SIZE = 512;
+const MIN_SCALE = 1;
+const MAX_SCALE = 4;
+
+function dist(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function Lightbox({ src, alt, onClose }) {
+  const [scale, setScale] = useState(1);
+  const [tx, setTx] = useState(0);
+  const [ty, setTy] = useState(0);
+  const pointers = useRef(new Map());
+  const gesture = useRef(null); // { mode: "pinch" | "pan", ... }
+  const moved = useRef(false);
+
+  function onPointerDown(e) {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    moved.current = false;
+    if (pointers.current.size === 2) {
+      const [a, b] = [...pointers.current.values()];
+      gesture.current = { mode: "pinch", startDist: dist(a, b), startScale: scale };
+    } else if (pointers.current.size === 1) {
+      gesture.current = { mode: "pan", startX: e.clientX, startY: e.clientY, startTx: tx, startTy: ty };
+    }
+  }
+
+  function onPointerMove(e) {
+    if (!pointers.current.has(e.pointerId)) return;
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (!gesture.current) return;
+
+    if (gesture.current.mode === "pinch" && pointers.current.size === 2) {
+      const [a, b] = [...pointers.current.values()];
+      const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, gesture.current.startScale * (dist(a, b) / gesture.current.startDist)));
+      moved.current = true;
+      setScale(newScale);
+    } else if (gesture.current.mode === "pan" && pointers.current.size === 1 && scale > 1) {
+      const dx = e.clientX - gesture.current.startX;
+      const dy = e.clientY - gesture.current.startY;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved.current = true;
+      setTx(gesture.current.startTx + dx);
+      setTy(gesture.current.startTy + dy);
+    }
+  }
+
+  function onPointerUp(e) {
+    pointers.current.delete(e.pointerId);
+    if (pointers.current.size === 0) {
+      gesture.current = null;
+      if (scale <= 1.02) {
+        setScale(1);
+        setTx(0);
+        setTy(0);
+      }
+    } else if (pointers.current.size === 1) {
+      const [only] = [...pointers.current.entries()];
+      gesture.current = { mode: "pan", startX: only[1].x, startY: only[1].y, startTx: tx, startTy: ty };
+    }
+  }
+
+  function handleBackdropClick() {
+    if (moved.current) return;
+    onClose();
+  }
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[9999] bg-gray-950/90 backdrop-blur-sm flex items-center justify-center p-6 overflow-hidden select-none"
+      style={{ touchAction: "none" }}
+      onClick={handleBackdropClick}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+    >
+      <button
+        onClick={(e) => { e.stopPropagation(); onClose(); }}
+        className="absolute top-4 right-4 flex items-center justify-center w-10 h-10 rounded-full bg-white/10 text-white/90 hover:bg-white/20 hover:text-white transition-colors"
+      >
+        <X size={20} />
+      </button>
+      <div
+        className="max-w-full max-h-full rounded-xl shadow-xl border border-white/10 bg-white overflow-hidden p-3"
+        style={{ transform: `translate(${tx}px, ${ty}px) scale(${scale})`, transition: gesture.current ? "none" : "transform 0.15s ease-out" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <img src={src} alt={alt} className="max-w-full max-h-[80vh] object-contain rounded-lg" draggable={false} />
+      </div>
+    </div>,
+    document.body
+  );
+}
 
 export function ImageZoom({ src, alt, children, className }) {
   const [pos, setPos] = useState(null);
@@ -128,26 +221,7 @@ export function ImageZoom({ src, alt, children, className }) {
         </div>,
         document.body
       )}
-      {lightboxOpen && createPortal(
-        <div
-          className="fixed inset-0 z-[9999] bg-gray-950/90 backdrop-blur-sm flex items-center justify-center p-6"
-          onClick={() => setLightboxOpen(false)}
-        >
-          <button
-            onClick={(e) => { e.stopPropagation(); setLightboxOpen(false); }}
-            className="absolute top-4 right-4 flex items-center justify-center w-10 h-10 rounded-full bg-white/10 text-white/90 hover:bg-white/20 hover:text-white transition-colors"
-          >
-            <X size={20} />
-          </button>
-          <div
-            className="max-w-full max-h-full rounded-xl shadow-xl border border-white/10 bg-white overflow-hidden p-3"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <img src={src} alt={alt} className="max-w-full max-h-[80vh] object-contain rounded-lg" />
-          </div>
-        </div>,
-        document.body
-      )}
+      {lightboxOpen && <Lightbox src={src} alt={alt} onClose={() => setLightboxOpen(false)} />}
     </>
   );
 }
