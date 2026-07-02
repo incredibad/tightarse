@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { X } from "lucide-react";
 
 export function Tooltip({ content, children }) {
   const [pos, setPos] = useState(null);
@@ -64,9 +65,13 @@ export function Tooltip({ content, children }) {
   );
 }
 
+const HOVER_POPUP_SIZE = 512;
+
 export function ImageZoom({ src, alt, children, className }) {
   const [pos, setPos] = useState(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const ref = useRef(null);
+  const lastPointerType = useRef("mouse");
 
   useEffect(() => {
     if (!pos) return;
@@ -80,7 +85,26 @@ export function ImageZoom({ src, alt, children, className }) {
   function showZoom() {
     if (!ref.current) return;
     const r = ref.current.getBoundingClientRect();
-    setPos({ top: r.top + r.height / 2, left: r.left });
+    const margin = 12;
+    const top = Math.min(
+      Math.max(r.top + r.height / 2, HOVER_POPUP_SIZE / 2 + margin),
+      window.innerHeight - HOVER_POPUP_SIZE / 2 - margin
+    );
+    const openRight = r.left < HOVER_POPUP_SIZE + margin;
+    setPos({ top, left: openRight ? r.right + 10 : r.left - 10, openRight });
+  }
+
+  function handlePointerDown(e) {
+    lastPointerType.current = e.pointerType;
+  }
+
+  function handleClick(e) {
+    e.stopPropagation();
+    if (lastPointerType.current === "touch") {
+      setLightboxOpen(true);
+      return;
+    }
+    pos ? setPos(null) : showZoom();
   }
 
   return (
@@ -89,7 +113,8 @@ export function ImageZoom({ src, alt, children, className }) {
         ref={ref}
         onMouseEnter={showZoom}
         onMouseLeave={() => setPos(null)}
-        onClick={(e) => { e.stopPropagation(); pos ? setPos(null) : showZoom(); }}
+        onPointerDown={handlePointerDown}
+        onClick={handleClick}
         className={`cursor-zoom-in ${className || ""}`}
       >
         {children}
@@ -97,11 +122,33 @@ export function ImageZoom({ src, alt, children, className }) {
       {pos && createPortal(
         <div
           className="fixed z-[9999] pointer-events-none"
-          style={{ top: pos.top, left: pos.left - 10, transform: "translate(-100%, -50%)" }}
+          style={{
+            top: pos.top,
+            left: pos.left,
+            transform: pos.openRight ? "translate(0, -50%)" : "translate(-100%, -50%)",
+          }}
         >
-          <div className="w-64 h-64 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 bg-white overflow-hidden p-[5px]">
+          <div
+            className="rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 bg-white overflow-hidden p-[5px]"
+            style={{ width: HOVER_POPUP_SIZE, height: HOVER_POPUP_SIZE }}
+          >
             <img src={src} alt={alt} className="w-full h-full object-contain" />
           </div>
+        </div>,
+        document.body
+      )}
+      {lightboxOpen && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center"
+          onClick={() => setLightboxOpen(false)}
+        >
+          <button
+            onClick={(e) => { e.stopPropagation(); setLightboxOpen(false); }}
+            className="absolute top-4 right-4 text-white/80 hover:text-white p-2"
+          >
+            <X size={28} />
+          </button>
+          <img src={src} alt={alt} className="max-w-full max-h-full object-contain" onClick={(e) => e.stopPropagation()} />
         </div>,
         document.body
       )}
