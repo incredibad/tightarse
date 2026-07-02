@@ -8,6 +8,10 @@ _IMPERSONATE = "chrome124"
 
 
 class ALDIScraper(BaseScraper):
+    # Deliberately doesn't extract on_special/was_price: ALDI's grocery pricing
+    # doesn't do per-item "was $X now $Y" discounts like Woolworths/Coles/Drakes.
+    # Their discount mechanism is the rotating weekly Special Buys catalogue,
+    # which is unrelated to the branded/own-brand groceries this app tracks.
     store_name = "ALDI"
 
     def __init__(self, proxy_url: str = ""):
