@@ -93,7 +93,7 @@ const PAGE_TITLES = {
 };
 
 function getPageTitle(pathname) {
-  if (/^\/items\/[^/]+\/add-product$/.test(pathname)) return "Shopping List";
+  if (/^\/items\/[^/]+(\/add-product)?$/.test(pathname)) return "Shopping List";
   return PAGE_TITLES[pathname];
 }
 
