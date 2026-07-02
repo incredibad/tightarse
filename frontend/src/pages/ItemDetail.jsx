@@ -39,6 +39,7 @@ export default function ItemDetail() {
   const [item, setItem] = useState(null);
   const [products, setProducts] = useState([]);
   const [histories, setHistories] = useState({});
+  const [storePriority, setStorePriority] = useState({});
   const [loading, setLoading] = useState(true);
   const [rescraping, setRescraping] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
@@ -61,12 +62,23 @@ export default function ItemDetail() {
   async function loadData() {
     setLoading(true);
     try {
-      const [itemData, productsData] = await Promise.all([
+      const [itemData, productsData, storesData, settingsData] = await Promise.all([
         api.getItem(Number(itemId)),
         api.getProducts(Number(itemId)),
+        api.getStores(),
+        api.getSettings(),
       ]);
       setItem(itemData);
       setProducts(productsData);
+
+      const priorityMap = Object.fromEntries(storesData.map((s) => [s.id, s.priority ?? 999]));
+      const orderJson = Object.fromEntries(settingsData.map((r) => [r.key, r.value])).store_order;
+      if (orderJson) {
+        try {
+          JSON.parse(orderJson).forEach((id, i) => { priorityMap[id] = i; });
+        } catch {}
+      }
+      setStorePriority(priorityMap);
       const historyMap = {};
       await Promise.all(productsData.map(async (p) => {
         historyMap[p.id] = await api.getProductHistory(p.id);
@@ -150,10 +162,11 @@ export default function ItemDetail() {
     if (ka !== kb) return ka - kb;
     const ca = _comparablePrice(a);
     const cb = _comparablePrice(b);
-    if (ca == null && cb == null) return 0;
+    if (ca == null && cb == null) return (storePriority[a.store_id] ?? 999) - (storePriority[b.store_id] ?? 999);
     if (ca == null) return 1;
     if (cb == null) return -1;
-    return ca - cb;
+    if (ca !== cb) return ca - cb;
+    return (storePriority[a.store_id] ?? 999) - (storePriority[b.store_id] ?? 999);
   });
 
   return (
