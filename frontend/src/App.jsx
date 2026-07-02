@@ -92,11 +92,16 @@ const PAGE_TITLES = {
   "/settings": "Settings",
 };
 
+function getPageTitle(pathname) {
+  if (/^\/items\/[^/]+\/add-product$/.test(pathname)) return "Shopping List";
+  return PAGE_TITLES[pathname];
+}
+
 export default function App() {
   const [gate, setGate] = useState(LOADING);
   const [user, setUserState] = useState(null);
   const location = useLocation();
-  const pageTitle = PAGE_TITLES[location.pathname];
+  const pageTitle = getPageTitle(location.pathname);
 
   useEffect(() => {
     // Dark mode: default to dark if no preference stored
