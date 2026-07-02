@@ -156,7 +156,7 @@ export default function Journey() {
         />
       )}
       <div className="flex items-center justify-between">
-        <h1 className="font-logo text-xl font-semibold">Shopping Journey</h1>
+        <h1 className="page-header text-xl">Shopping Journey</h1>
         <div className="flex items-center gap-2">
           {checkedItems.size > 0 && (
             <button

@@ -86,7 +86,7 @@ export default function Checklist() {
           onCancel={() => setTrackConfirm(null)}
         />
       )}
-      <h1 className="font-logo text-xl font-semibold">Checklist</h1>
+      <h1 className="page-header text-xl">Checklist</h1>
 
       <form onSubmit={addItem} className="flex gap-2">
         <input

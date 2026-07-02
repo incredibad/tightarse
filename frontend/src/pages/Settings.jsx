@@ -77,14 +77,14 @@ export default function Settings({ onLogout, user }) {
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="font-logo text-xl font-semibold">Settings</h1>
+        <h1 className="page-header text-xl">Settings</h1>
         <a
           href="https://github.com/incredibad/tightarse"
           target="_blank"
           rel="noopener noreferrer"
           className="text-xs text-gray-400 hover:text-brand-500 transition-colors font-mono"
         >
-          v0.5.26
+          v0.5.27
         </a>
       </div>
 
@@ -368,7 +368,7 @@ function StoresTab() {
   return (
     <div className="space-y-4">
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
-        <h2 className="font-logo text-xs font-semibold uppercase tracking-wide text-gray-400">Store Preferences</h2>
+        <h2 className="section-header">Store Preferences</h2>
         <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
           Enable or disable stores for your shopping list and journey.
           Use the arrows to set priority order — when two products cost the same,
@@ -528,7 +528,7 @@ function ScrapeHistoryModal({ onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4" onClick={onClose}>
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg p-5 space-y-4 max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h2 className="font-logo font-semibold text-gray-900 dark:text-white">Scrape history</h2>
+          <h2 className="modal-header">Scrape history</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><X size={18} /></button>
         </div>
         {history === null ? (
@@ -859,7 +859,7 @@ function AddUserModal({ onClose, onCreated }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4" onClick={onClose}>
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-sm p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h2 className="font-logo font-semibold text-gray-900 dark:text-white">Add user</h2>
+          <h2 className="modal-header">Add user</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><X size={18} /></button>
         </div>
         <form onSubmit={submit} className="space-y-3">
@@ -1071,7 +1071,7 @@ function TestEmailModal({ onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4" onClick={onClose}>
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-sm p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h2 className="font-logo font-semibold text-gray-900 dark:text-white">Send test email</h2>
+          <h2 className="modal-header">Send test email</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><X size={18} /></button>
         </div>
         {status === "ok" ? (
@@ -1128,7 +1128,7 @@ function Section({ title, description, action, children }) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="font-logo text-xs font-semibold uppercase tracking-wide text-gray-400">{title}</h2>
+        <h2 className="section-header">{title}</h2>
         {action}
       </div>
       {description && <p className="text-xs text-gray-500 dark:text-gray-400">{description}</p>}

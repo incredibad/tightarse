@@ -29,7 +29,7 @@ export default function Login({ onComplete }) {
         <div className="text-center">
           <div className="flex flex-col items-center gap-2 mb-2">
             <img src="/logo.png" alt="" className="h-20 w-auto" />
-            <span className="font-logo font-semibold text-2xl tracking-wide uppercase text-brand-500">Tightarse</span>
+            <span className="logo-wordmark text-2xl">Tightarse</span>
           </div>
           <p className="text-gray-500 dark:text-gray-400 text-sm">Sign in to your account.</p>
         </div>

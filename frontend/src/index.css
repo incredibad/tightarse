@@ -10,3 +10,22 @@
     @apply bg-gray-900 text-gray-100;
   }
 }
+
+@layer components {
+  /* "Tightarse" brand wordmark — nav bar, login, setup. Size set per call site. */
+  .logo-wordmark {
+    @apply font-logo font-semibold tracking-wide uppercase text-brand-500;
+  }
+  /* Main <h1> title for a page/screen. Size set per call site. */
+  .page-header {
+    @apply font-logo font-semibold;
+  }
+  /* Small uppercase section label within a card (e.g. "Store Preferences"). */
+  .section-header {
+    @apply font-logo font-semibold text-xs uppercase tracking-wide text-gray-400;
+  }
+  /* Title bar of a modal/dialog. */
+  .modal-header {
+    @apply font-logo font-semibold text-gray-900 dark:text-white;
+  }
+}
