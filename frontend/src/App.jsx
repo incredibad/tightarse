@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Routes, Route, NavLink } from "react-router-dom";
+import { Routes, Route, NavLink, useLocation } from "react-router-dom";
 import { List, Settings, Map, Loader2, X, TriangleAlert, CheckSquare } from "lucide-react";
 import { api, clearToken, setUser, getUser } from "./api";
 import Setup from "./pages/Setup";
@@ -85,9 +85,18 @@ function NavItem({ to, icon: Icon, label }) {
   );
 }
 
+const PAGE_TITLES = {
+  "/": "Shopping List",
+  "/checklist": "Checklist",
+  "/journey": "Journey",
+  "/settings": "Settings",
+};
+
 export default function App() {
   const [gate, setGate] = useState(LOADING);
   const [user, setUserState] = useState(null);
+  const location = useLocation();
+  const pageTitle = PAGE_TITLES[location.pathname];
 
   useEffect(() => {
     // Dark mode: default to dark if no preference stored
@@ -150,9 +159,14 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col">
       <header className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-2">
-          <img src="/logo.png" alt="" className="h-6 w-auto" />
-          <span className="logo-wordmark text-lg">Tightarse</span>
+        <div className="max-w-2xl mx-auto flex items-stretch">
+          <div className="flex-1 min-w-0 px-4 py-3 flex items-center gap-2">
+            <img src="/logo.png" alt="" className="h-6 w-auto" />
+            <span className="logo-wordmark text-lg">Tightarse</span>
+          </div>
+          <div className="flex-1 min-w-0 px-4 py-3 flex items-center justify-end bg-gray-50 dark:bg-gray-800/60">
+            {pageTitle && <span className="page-header text-lg truncate">{pageTitle}</span>}
+          </div>
         </div>
       </header>
 
