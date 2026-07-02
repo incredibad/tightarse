@@ -170,14 +170,14 @@ export default function ItemDetail() {
                 value={nameInput}
                 onChange={(e) => setNameInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") saveItemName(); if (e.key === "Escape") cancelEditingName(); }}
-                className="flex-1 min-w-0 text-xl font-bold bg-transparent border-b-2 border-brand-500 focus:outline-none text-gray-900 dark:text-white"
+                className="font-logo flex-1 min-w-0 text-xl font-semibold bg-transparent border-b-2 border-brand-500 focus:outline-none text-gray-900 dark:text-white"
               />
               <button onClick={saveItemName} className="text-brand-600 hover:text-brand-700 shrink-0"><Check size={18} /></button>
               <button onClick={cancelEditingName} className="text-gray-400 hover:text-gray-600 shrink-0"><X size={16} /></button>
             </>
           ) : (
             <>
-              <h1 className="text-xl font-bold truncate">{item.name}</h1>
+              <h1 className="font-logo text-xl font-semibold truncate">{item.name}</h1>
               <button onClick={startEditingName} className="text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 transition-colors shrink-0" title="Rename">
                 <Pencil size={14} />
               </button>
