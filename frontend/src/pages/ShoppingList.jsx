@@ -53,7 +53,7 @@ export default function ShoppingList() {
     const item = await api.createItem({ name: newName.trim() });
     setNewName("");
     setShowAddForm(false);
-    navigate(`/items/${item.id}/add-product`);
+    navigate(`/items/${item.id}/add-product`, { state: { itemName: item.name } });
   }
 
   async function handleDeleteItem(e, id) {

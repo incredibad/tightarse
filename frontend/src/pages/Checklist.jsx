@@ -69,7 +69,7 @@ export default function Checklist() {
     try {
       const newItem = await api.createItem({ name: item.name });
       removeItem(item.id);
-      navigate(`/items/${newItem.id}/add-product`);
+      navigate(`/items/${newItem.id}/add-product`, { state: { itemName: newItem.name } });
     } finally {
       setTracking(null);
     }

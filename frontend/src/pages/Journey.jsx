@@ -106,7 +106,7 @@ export default function Journey() {
     try {
       const newItem = await api.createItem({ name: item.name });
       removeChecklistItem(item.id);
-      navigate(`/items/${newItem.id}/add-product`);
+      navigate(`/items/${newItem.id}/add-product`, { state: { itemName: newItem.name } });
     } finally {
       setChecklistTracking(null);
     }

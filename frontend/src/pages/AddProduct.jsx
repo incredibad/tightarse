@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, Check, X, Loader2, Search, Link2, ExternalLink } from "lucide-react";
 import { api } from "../api";
 import StorePill from "../components/StorePill";
@@ -35,6 +35,7 @@ function ProductImage({ src }) {
 export default function AddProduct() {
   const { itemId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [stores, setStores] = useState([]);
   const [selectedStoreIds, setSelectedStoreIds] = useState(new Set());
@@ -48,7 +49,7 @@ export default function AddProduct() {
   const [urlError, setUrlError] = useState(null);
 
   // Search section
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(location.state?.itemName ?? "");
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState(null);
