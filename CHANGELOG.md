@@ -2,6 +2,41 @@
 
 All notable changes to this project will be documented here.
 
+## [0.5.38] - 2026-07-02
+### Changed
+- Replaced the dollar-sign logo with a piggy-bank-and-coin logo across the nav bar, login screen, setup screen, favicon, and PWA icons
+- Brand accent colour changed from green to gold, matching the coin in the new logo
+- All headers now use the Fredoka font; introduced semantic `.logo-wordmark`, `.page-header`, `.section-header`, and `.modal-header` CSS classes instead of repeating utility class combos everywhere
+- Page titles (Shopping List, Checklist, Journey, Settings) moved out of each page body and into the nav bar, right-aligned in a subtly shaded half, in a smaller uppercase style — saves vertical space on every screen. Child screens (item detail, add product, product history) show "Shopping List" as their nav title
+- Journey's Estimated total, Reset, and Checklist toggle now share a single compact row instead of stacking across two
+- Shopping List's filter input and refresh/add-item buttons are now inline on one row
+- Swapped the shopping-cart icon for a list-plus icon on "track to Shopping List" buttons — clearer that it adds to a list rather than a checkout
+### Added
+- Add Product search box auto-fills with the new item's name when arriving from the Shopping List "Add item" form or a checklist "track" action
+- Bottom nav's List tab now stays highlighted while viewing any item detail/add-product/product-history screen
+- Store accordion headers on the Journey page align with the item rows below them (matching chevron column + vertical divider)
+
+## [0.5.23] - 2026-07-01
+### Added
+- Admin Users tab shows last login time and an online/"seen X ago" indicator per user
+- Explanatory text on the Notifications tab describing how price drop alerts work
+- Inline rename for shopping list items via a pencil icon in the item header
+### Fixed
+- ALDI scraper impersonates Chrome's TLS fingerprint (via curl_cffi) to bypass 403 blocks
+- Log timestamps now include the date, not just the time
+- Checklist "show checklist" button uses an Eye/EyeOff icon reflecting the action rather than the current state
+- Suppressed noisy httpx request logging so scheduled scrape logs aren't buried
+
+## [0.5.13] - 2026-06-30
+### Added
+- Coles store picker — search by postcode and pick your local store inline in Settings → Stores, replacing manual store ID entry
+- Drakes store picker — same inline postcode search + tooltip UX as Coles
+- Checklist fully replicated on the Journey page as a collapsible accordion, with tap-to-check, persisted checked state, and a "track to Shopping List" action with a confirmation modal
+### Fixed
+- Coles scrape requests now pass the `fulfillmentStoreId` cookie so results match the configured store
+- Coles store search uses the ColesScraper's own client for the GraphQL call
+- Store-picker layout/styling fixes — inline postcode input+button, dropdown results, button contrast
+
 ## [0.5.0] - 2026-06-23
 ### Added
 - Scrape run history persisted to DB — survives container restarts; shown in a "Show all" modal with per-run ok/failed counts

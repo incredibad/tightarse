@@ -44,7 +44,7 @@ A self-hosted grocery price tracker and shopping assistant. Add items to your li
 - **Check off items** — Checked items sink to a strikethrough section at the bottom
 - **Inline editing** — Tap an unchecked item's name to edit it in place
 - **Clear checked** — Remove all ticked items in one tap
-- **Promote to Shopping List** — Tap the cart icon on any item to create a Shopping List entry and jump straight to the add-product search for it
+- **Promote to Shopping List** — Tap the list icon on any item to create a Shopping List entry and jump straight to the add-product search for it, pre-filled with the item's name
 
 ### Stores
 - **Supported stores** — Woolworths, Coles, ALDI, Drakes, Amazon AU (via VPN proxy)
