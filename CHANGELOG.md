@@ -30,7 +30,7 @@ All notable changes to this project will be documented here.
 ## [0.5.13] - 2026-06-30
 ### Added
 - Coles store picker — search by postcode and pick your local store inline in Settings → Stores, replacing manual store ID entry
-- Drakes store picker — same inline postcode search + tooltip UX as Coles
+- Drakes store picker — inline dropdown list of Drakes locations that support online ordering, with the same tooltip UX as Coles
 - Checklist fully replicated on the Journey page as a collapsible accordion, with tap-to-check, persisted checked state, and a "track to Shopping List" action with a confirmation modal
 ### Fixed
 - Coles scrape requests now pass the `fulfillmentStoreId` cookie so results match the configured store

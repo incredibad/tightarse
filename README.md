@@ -53,7 +53,7 @@ A self-hosted grocery price tracker and shopping assistant. Add items to your li
 - **Enable / disable stores** — Turn off stores you don't shop at
 - **Reorder stores** — Drag to set your preferred store priority for the Journey view
 - **Coles store picker** — Search by postcode and pick your local store inline, instead of entering a store ID manually
-- **Drakes store selector** — Same inline postcode search to pick which Drakes location to use
+- **Drakes store selector** — Pick your local store from an inline dropdown list of Drakes locations that support online ordering
 
 ### Notifications
 - **Price drop alerts** — Get notified when a tracked product drops in price by a configurable percentage
