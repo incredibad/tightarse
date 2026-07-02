@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown, ChevronUp, Loader2, ShoppingBag, RotateCcw, Square, CheckSquare, Trash2, ShoppingCart, Eye, EyeOff } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2, ShoppingBag, RotateCcw, Square, CheckSquare, Trash2, ListPlus, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import ConfirmModal from "../components/ConfirmModal";
@@ -250,7 +250,7 @@ export default function Journey() {
                         </span>
                       )}
                       <button onClick={() => setTrackConfirm(item)} disabled={checklistTracking === item.id} title="Track on Shopping List" className="shrink-0 text-gray-400 hover:text-brand-500 active:opacity-70 transition-colors disabled:opacity-40">
-                        <ShoppingCart size={16} />
+                        <ListPlus size={16} />
                       </button>
                       <button onClick={() => removeChecklistItem(item.id)} className="shrink-0 text-gray-400 hover:text-red-500 active:opacity-70 transition-colors">
                         <Trash2 size={16} />
