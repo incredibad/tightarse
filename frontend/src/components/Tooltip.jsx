@@ -144,7 +144,7 @@ function Lightbox({ src, alt, onClose }) {
     >
       <button
         onClick={(e) => { e.stopPropagation(); onClose(); }}
-        className="absolute top-4 right-4 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-white/10 text-white/90 hover:bg-white/20 hover:text-white transition-colors"
+        className="absolute top-4 right-4 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-gray-950/80 text-white shadow-lg hover:bg-gray-950 transition-colors"
       >
         <X size={20} />
       </button>
