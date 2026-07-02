@@ -71,7 +71,6 @@ export function ImageZoom({ src, alt, children, className }) {
   const [pos, setPos] = useState(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const ref = useRef(null);
-  const lastPointerType = useRef("mouse");
 
   useEffect(() => {
     if (!pos) return;
@@ -94,17 +93,10 @@ export function ImageZoom({ src, alt, children, className }) {
     setPos({ top, left: openRight ? r.right + 10 : r.left - 10, openRight });
   }
 
-  function handlePointerDown(e) {
-    lastPointerType.current = e.pointerType;
-  }
-
   function handleClick(e) {
     e.stopPropagation();
-    if (lastPointerType.current === "touch") {
-      setLightboxOpen(true);
-      return;
-    }
-    pos ? setPos(null) : showZoom();
+    setPos(null);
+    setLightboxOpen(true);
   }
 
   return (
@@ -113,7 +105,6 @@ export function ImageZoom({ src, alt, children, className }) {
         ref={ref}
         onMouseEnter={showZoom}
         onMouseLeave={() => setPos(null)}
-        onPointerDown={handlePointerDown}
         onClick={handleClick}
         className={`cursor-zoom-in ${className || ""}`}
       >
@@ -139,16 +130,21 @@ export function ImageZoom({ src, alt, children, className }) {
       )}
       {lightboxOpen && createPortal(
         <div
-          className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center"
+          className="fixed inset-0 z-[9999] bg-gray-950/90 backdrop-blur-sm flex items-center justify-center p-6"
           onClick={() => setLightboxOpen(false)}
         >
           <button
             onClick={(e) => { e.stopPropagation(); setLightboxOpen(false); }}
-            className="absolute top-4 right-4 text-white/80 hover:text-white p-2"
+            className="absolute top-4 right-4 flex items-center justify-center w-10 h-10 rounded-full bg-white/10 text-white/90 hover:bg-white/20 hover:text-white transition-colors"
           >
-            <X size={28} />
+            <X size={20} />
           </button>
-          <img src={src} alt={alt} className="max-w-full max-h-full object-contain" onClick={(e) => e.stopPropagation()} />
+          <div
+            className="max-w-full max-h-full rounded-xl shadow-xl border border-white/10 bg-white overflow-hidden p-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img src={src} alt={alt} className="max-w-full max-h-[80vh] object-contain rounded-lg" />
+          </div>
         </div>,
         document.body
       )}
