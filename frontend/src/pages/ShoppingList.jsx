@@ -77,41 +77,40 @@ export default function ShoppingList() {
 
   return (
     <div className="p-3 space-y-3">
-      <div className="flex items-center justify-end">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleRescrapeAll}
-            disabled={rescraping}
-            className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 disabled:opacity-50 transition-colors"
-            title="Refresh all prices"
-          >
-            <RefreshCw size={18} className={rescraping ? "animate-spin" : ""} />
-          </button>
-          <button
-            onClick={() => setShowAddForm(true)}
-            className="flex items-center gap-1 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
-          >
-            <Plus size={16} /> Add item
-          </button>
-        </div>
+      <div className="flex items-center gap-2">
+        {items.length > 0 ? (
+          <div className="relative flex-1 min-w-0">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <input
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              placeholder="Filter items…"
+              className="w-full pl-8 pr-8 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            />
+            {filter && (
+              <button onClick={() => setFilter("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <X size={13} />
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="flex-1" />
+        )}
+        <button
+          onClick={handleRescrapeAll}
+          disabled={rescraping}
+          className="shrink-0 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 disabled:opacity-50 transition-colors"
+          title="Refresh all prices"
+        >
+          <RefreshCw size={18} className={rescraping ? "animate-spin" : ""} />
+        </button>
+        <button
+          onClick={() => setShowAddForm(true)}
+          className="shrink-0 flex items-center gap-1 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
+        >
+          <Plus size={16} /> Add item
+        </button>
       </div>
-
-      {items.length > 0 && (
-        <div className="relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-          <input
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            placeholder="Filter items…"
-            className="w-full pl-8 pr-8 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
-          />
-          {filter && (
-            <button onClick={() => setFilter("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-              <X size={13} />
-            </button>
-          )}
-        </div>
-      )}
 
       {showAddForm && (
         <form onSubmit={handleAddItem} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-3 shadow-sm">
