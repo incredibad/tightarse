@@ -25,7 +25,8 @@ A self-hosted grocery price tracker and shopping assistant. Add items to your li
 
 ### Shopping List
 - **Multi-store price tracking** — Track the same item across Woolworths, Coles, ALDI, Drakes, and Amazon AU
-- **Paste a URL to add a product** — Supports direct product URLs or in-store search for supported stores
+- **Paste a URL to add a product, or search by name** — Supports direct product URLs or in-store search for supported stores; the search box auto-fills with the item's name when you've just added it
+- **Inline rename** — Tap the pencil icon next to an item's name to rename it in place
 - **Special / sale detection** — Highlights on-special prices and shows the previous was-price
 - **Cup price (unit price)** — Shows price per 100g, per 100ml, per 100 sheets, etc. for easy comparison; inferred from the product name when the store doesn't provide one
 - **Price history** — Full chart and table of every recorded price per product, accessible from the product ⋮ menu
@@ -38,6 +39,7 @@ A self-hosted grocery price tracker and shopping assistant. Add items to your li
 - **Cheapest store per item** — Automatically picks the best-priced in-stock product for each item
 - **Alternatives** — Expand any item to see what it costs at other stores
 - **Collapsible store sections** — Tap a store heading to collapse it once you're done shopping there
+- **Built-in checklist** — Show/hide a full copy of your Checklist right on the Journey page so you can tick off extras without switching tabs
 
 ### Checklist
 - **Temporary scratch pad** — A simple checklist for your shopping trip; completely separate from the tracked list
@@ -50,7 +52,8 @@ A self-hosted grocery price tracker and shopping assistant. Add items to your li
 - **Supported stores** — Woolworths, Coles, ALDI, Drakes, Amazon AU (via VPN proxy)
 - **Enable / disable stores** — Turn off stores you don't shop at
 - **Reorder stores** — Drag to set your preferred store priority for the Journey view
-- **Drakes store selector** — Pick which Drakes location to use
+- **Coles store picker** — Search by postcode and pick your local store inline, instead of entering a store ID manually
+- **Drakes store selector** — Same inline postcode search to pick which Drakes location to use
 
 ### Notifications
 - **Price drop alerts** — Get notified when a tracked product drops in price by a configurable percentage
@@ -59,6 +62,7 @@ A self-hosted grocery price tracker and shopping assistant. Add items to your li
 ### System
 - **Multi-user** — Invite additional users; the first account created becomes admin
 - **Admin controls** — Manage users, stores, scrape interval, notification settings, and VPN proxy from Settings
+- **User activity tracking** — Admin Users tab shows each user's last login time and an online/"seen X ago" indicator
 - **VPN proxy support** — Route Amazon (or all) scraping through a gluetun HTTP proxy to protect your home IP
 - **Dark mode** — Defaults to dark, toggleable in Settings
 - **Mobile-first** — Designed for use on your phone while you're in the supermarket
