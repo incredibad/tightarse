@@ -170,7 +170,7 @@ export default function App() {
             <span className="logo-wordmark text-lg">Tightarse</span>
           </div>
           <div className="flex-1 min-w-0 px-4 py-3 flex items-center justify-end bg-gray-50 dark:bg-gray-800/60">
-            {pageTitle && <span className="page-header text-lg truncate">{pageTitle}</span>}
+            {pageTitle && <span className="page-header text-base uppercase tracking-wide truncate">{pageTitle}</span>}
           </div>
         </div>
       </header>
