@@ -38,13 +38,13 @@ export default function Setup({ onComplete }) {
         <div className="text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
             <img src="/logo.png" alt="" className="h-8 w-auto" />
-            <span className="font-logo font-semibold text-2xl tracking-wide uppercase text-brand-500">Tightarse</span>
+            <span className="logo-wordmark text-2xl">Tightarse</span>
           </div>
           <p className="text-gray-500 dark:text-gray-400 text-sm">Create your admin account to get started.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm space-y-4">
-          <h2 className="font-logo font-semibold text-gray-800 dark:text-gray-200">First-time setup</h2>
+          <h2 className="modal-header">First-time setup</h2>
 
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2">{error}</div>

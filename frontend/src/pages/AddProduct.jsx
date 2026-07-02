@@ -217,7 +217,7 @@ export default function AddProduct() {
           <button onClick={() => { setPicked(null); setSaveError(null); }} className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
             <ArrowLeft size={20} />
           </button>
-          <h1 className="font-logo text-xl font-semibold">Confirm product</h1>
+          <h1 className="page-header text-xl">Confirm product</h1>
         </div>
 
         {saveError && (
@@ -285,7 +285,7 @@ export default function AddProduct() {
         <button onClick={() => navigate(`/items/${itemId}`)} className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
           <ArrowLeft size={20} />
         </button>
-        <h1 className="font-logo text-xl font-semibold">Add Products</h1>
+        <h1 className="page-header text-xl">Add Products</h1>
       </div>
 
       {saveError && (

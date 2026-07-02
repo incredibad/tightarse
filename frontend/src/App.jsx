@@ -152,7 +152,7 @@ export default function App() {
       <header className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-2">
           <img src="/logo.png" alt="" className="h-6 w-auto" />
-          <span className="font-logo font-semibold text-lg tracking-wide uppercase text-brand-500">Tightarse</span>
+          <span className="logo-wordmark text-lg">Tightarse</span>
         </div>
       </header>
 
