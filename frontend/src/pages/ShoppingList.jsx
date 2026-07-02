@@ -77,8 +77,7 @@ export default function ShoppingList() {
 
   return (
     <div className="p-3 space-y-3">
-      <div className="flex items-center justify-between">
-        <h1 className="page-header text-xl">Shopping List</h1>
+      <div className="flex items-center justify-end">
         <div className="flex items-center gap-2">
           <button
             onClick={handleRescrapeAll}

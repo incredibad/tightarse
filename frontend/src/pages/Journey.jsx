@@ -155,10 +155,14 @@ export default function Journey() {
           onCancel={() => setTrackConfirm(null)}
         />
       )}
-      <div className="flex items-center justify-between">
-        <h1 className="page-header text-xl">
-          Journey <span className="text-gray-400 dark:text-gray-500 font-normal">(${journey.estimated_total.toFixed(2)})</span>
-        </h1>
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2.5 shadow-sm flex justify-between items-center">
+        <div>
+          <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">Estimated total</p>
+          <p className="text-3xl font-bold text-gray-900 dark:text-white">${journey.estimated_total.toFixed(2)}</p>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-end">
         <div className="flex items-center gap-2">
           {checkedItems.size > 0 && (
             <button

@@ -76,15 +76,14 @@ export default function Settings({ onLogout, user }) {
 
   return (
     <div className="p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="page-header text-xl">Settings</h1>
+      <div className="flex items-center justify-end">
         <a
           href="https://github.com/incredibad/tightarse"
           target="_blank"
           rel="noopener noreferrer"
           className="text-xs text-gray-400 hover:text-brand-500 transition-colors font-mono"
         >
-          v0.5.30
+          v0.5.31
         </a>
       </div>
 
