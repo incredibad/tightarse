@@ -69,15 +69,16 @@ const SETUP   = "setup";
 const LOGIN   = "login";
 const APP     = "app";
 
-function NavItem({ to, icon: Icon, label }) {
+function NavItem({ to, icon: Icon, label, active }) {
   return (
     <NavLink
       to={to}
-      className={({ isActive }) =>
-        `flex flex-col items-center gap-0.5 px-4 py-2 text-xs font-medium transition-colors ${
-          isActive ? "text-brand-600" : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
-        }`
-      }
+      className={({ isActive }) => {
+        const isOn = active !== undefined ? active : isActive;
+        return `flex flex-col items-center gap-0.5 px-4 py-2 text-xs font-medium transition-colors ${
+          isOn ? "text-brand-600" : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+        }`;
+      }}
     >
       <Icon size={20} />
       {label}
@@ -194,7 +195,7 @@ export default function App() {
       <nav className="fixed bottom-0 w-full bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
         <div className="max-w-2xl mx-auto flex justify-around">
           <NavItem to="/checklist" icon={CheckSquare} label="Checklist" />
-          <NavItem to="/" icon={List} label="List" />
+          <NavItem to="/" icon={List} label="List" active={location.pathname === "/" || location.pathname.startsWith("/items/")} />
           <NavItem to="/journey" icon={Map} label="Journey" />
           <NavItem to="/settings" icon={Settings} label="Settings" />
         </div>
