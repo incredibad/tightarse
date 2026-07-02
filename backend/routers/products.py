@@ -22,6 +22,8 @@ class ProductCreate(BaseModel):
     name: str
     url: str
     current_price: float | None = None
+    was_price: float | None = None
+    on_special: bool = False
     cup_price: float | None = None
     cup_label: str | None = None
     package_size: str | None = None
@@ -65,6 +67,8 @@ class ScrapePreviewResult(BaseModel):
     store_name: str
     store_id: int
     url: str
+    was_price: float | None = None
+    on_special: bool = False
     cup_price: float | None = None
     cup_label: str | None = None
     package_size: str | None = None
@@ -76,6 +80,8 @@ class SearchResult(BaseModel):
     price: float | None
     url: str
     store_name: str
+    was_price: float | None = None
+    on_special: bool = False
     cup_price: float | None = None
     cup_label: str | None = None
     package_size: str | None = None
@@ -189,6 +195,8 @@ async def preview_url(payload: dict, _user: User = Depends(require_auth), db: Se
         store_name=store.name,
         store_id=store.id,
         url=url,
+        was_price=result.was_price,
+        on_special=result.on_special,
         cup_price=result.cup_price,
         cup_label=result.cup_label,
         package_size=result.package_size,
@@ -247,6 +255,8 @@ async def create_product(
         name=payload.name,
         url=payload.url,
         current_price=payload.current_price,
+        was_price=payload.was_price,
+        on_special=payload.on_special,
         cup_price=payload.cup_price,
         cup_label=payload.cup_label,
         package_size=payload.package_size,
