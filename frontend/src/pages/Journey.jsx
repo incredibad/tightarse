@@ -302,14 +302,16 @@ export default function Journey() {
         >
           <button
             onClick={() => toggleStore(store.store_id)}
-            className="w-full flex items-center justify-between px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 active:opacity-70 transition-opacity"
+            className="w-full flex divide-x divide-gray-200 dark:divide-gray-600 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 active:opacity-70 transition-opacity"
           >
-            <div className="flex items-center gap-2">
-              <StorePill name={store.store_name} long />
-              {isCollapsed && <span className="text-xs text-gray-400">{store.items.length} item{store.items.length !== 1 ? "s" : ""}</span>}
-            </div>
-            <div className="flex items-center gap-2">
+            <div className="flex-1 min-w-0 flex items-center justify-between pl-3 pr-2 py-2.5">
+              <div className="flex items-center gap-2">
+                <StorePill name={store.store_name} long />
+                {isCollapsed && <span className="text-xs text-gray-400">{store.items.length} item{store.items.length !== 1 ? "s" : ""}</span>}
+              </div>
               <p className="font-bold text-gray-900 dark:text-white">${store.subtotal.toFixed(2)}</p>
+            </div>
+            <div className="w-10 shrink-0 flex items-center justify-center">
               {isCollapsed ? <ChevronDown size={14} className="text-gray-400 shrink-0" /> : <ChevronUp size={14} className="text-gray-400 shrink-0" />}
             </div>
           </button>
