@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Plus, ArrowLeft, Clock, Loader2, RefreshCw, MoreVertical, ExternalLink, Trash2, Pencil, Check, X } from "lucide-react";
-import { api } from "../api";
+import { api, isAdmin } from "../api";
 import PriceSparkline from "../components/PriceSparkline";
 import StorePill from "../components/StorePill";
 import { Tooltip, ImageZoom } from "../components/Tooltip";
@@ -197,14 +197,16 @@ export default function ItemDetail() {
             </>
           )}
         </div>
-        <button
-          onClick={handleRescrape}
-          disabled={rescraping}
-          className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 disabled:opacity-50 transition-colors shrink-0"
-          title="Refresh prices"
-        >
-          <RefreshCw size={18} className={rescraping ? "animate-spin" : ""} />
-        </button>
+        {isAdmin() && (
+          <button
+            onClick={handleRescrape}
+            disabled={rescraping}
+            className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 disabled:opacity-50 transition-colors shrink-0"
+            title="Refresh prices"
+          >
+            <RefreshCw size={18} className={rescraping ? "animate-spin" : ""} />
+          </button>
+        )}
         <button
           onClick={handleDeleteItem}
           className="text-gray-400 dark:text-gray-500 hover:text-red-400 transition-colors shrink-0"

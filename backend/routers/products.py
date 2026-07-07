@@ -277,7 +277,7 @@ async def create_product(
 
 
 @router.post("/rescrape/item/{item_id}", status_code=200)
-async def rescrape_item(item_id: int, current_user: User = Depends(require_auth)):
+async def rescrape_item(item_id: int, current_user: User = Depends(require_admin)):
     db = SessionLocal()
     try:
         item = db.query(Item).filter(Item.id == item_id, Item.user_id == current_user.id).first()
