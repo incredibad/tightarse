@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, ChevronRight, Loader2, RefreshCw, Search, X } from "lucide-react";
-import { api } from "../api";
+import { api, isAdmin } from "../api";
 import StorePill from "../components/StorePill";
 import { normalizeCupPrice, formatCupPrice } from "../utils";
 
@@ -96,14 +96,16 @@ export default function ShoppingList() {
         ) : (
           <div className="flex-1" />
         )}
-        <button
-          onClick={handleRescrapeAll}
-          disabled={rescraping}
-          className="shrink-0 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 disabled:opacity-50 transition-colors"
-          title="Refresh all prices"
-        >
-          <RefreshCw size={18} className={rescraping ? "animate-spin" : ""} />
-        </button>
+        {isAdmin() && (
+          <button
+            onClick={handleRescrapeAll}
+            disabled={rescraping}
+            className="shrink-0 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 disabled:opacity-50 transition-colors"
+            title="Refresh all prices"
+          >
+            <RefreshCw size={18} className={rescraping ? "animate-spin" : ""} />
+          </button>
+        )}
         <button
           onClick={() => setShowAddForm(true)}
           className="shrink-0 flex items-center gap-1 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
