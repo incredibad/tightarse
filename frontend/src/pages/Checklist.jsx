@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { CheckSquare, Square, Trash2, ShoppingCart, ClipboardList } from "lucide-react";
+import { CheckSquare, Square, Trash2, ListPlus, ClipboardList } from "lucide-react";
 import { api } from "../api";
 import { useNavigate } from "react-router-dom";
 import ConfirmModal from "../components/ConfirmModal";
@@ -69,7 +69,7 @@ export default function Checklist() {
     try {
       const newItem = await api.createItem({ name: item.name });
       removeItem(item.id);
-      navigate(`/items/${newItem.id}/add-product`);
+      navigate(`/items/${newItem.id}/add-product`, { state: { itemName: newItem.name } });
     } finally {
       setTracking(null);
     }
@@ -86,8 +86,6 @@ export default function Checklist() {
           onCancel={() => setTrackConfirm(null)}
         />
       )}
-      <h1 className="text-xl font-bold">Checklist</h1>
-
       <form onSubmit={addItem} className="flex gap-2">
         <input
           ref={inputRef}
@@ -146,7 +144,7 @@ export default function Checklist() {
                 title="Track on Shopping List"
                 className="shrink-0 text-gray-400 hover:text-brand-500 active:opacity-70 transition-colors disabled:opacity-40"
               >
-                <ShoppingCart size={16} />
+                <ListPlus size={16} />
               </button>
               <button
                 onClick={() => removeItem(item.id)}

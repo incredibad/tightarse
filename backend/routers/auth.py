@@ -41,6 +41,8 @@ class UserOut(BaseModel):
     role: str
     is_active: bool
     created_at: datetime
+    last_login_at: datetime | None = None
+    last_active_at: datetime | None = None
 
     class Config:
         from_attributes = True
@@ -93,6 +95,8 @@ def login(payload: LoginPayload, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account disabled")
+    user.last_login_at = datetime.utcnow()
+    db.commit()
     return TokenOut(access_token=create_token(user.username, db))
 
 

@@ -27,9 +27,9 @@ export default function Login({ onComplete }) {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <img src="/logo.svg" alt="" className="w-9 h-9" />
-            <span className="text-2xl font-bold tracking-tight">Tightarse</span>
+          <div className="flex flex-col items-center gap-2 mb-2">
+            <img src="/logo.png" alt="" className="h-20 w-auto" />
+            <span className="logo-wordmark text-2xl">Tightarse</span>
           </div>
           <p className="text-gray-500 dark:text-gray-400 text-sm">Sign in to your account.</p>
         </div>

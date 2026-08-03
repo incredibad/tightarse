@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, Check, X, Loader2, Search, Link2, ExternalLink } from "lucide-react";
 import { api } from "../api";
 import StorePill from "../components/StorePill";
@@ -35,6 +35,7 @@ function ProductImage({ src }) {
 export default function AddProduct() {
   const { itemId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [stores, setStores] = useState([]);
   const [selectedStoreIds, setSelectedStoreIds] = useState(new Set());
@@ -48,7 +49,7 @@ export default function AddProduct() {
   const [urlError, setUrlError] = useState(null);
 
   // Search section
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(location.state?.itemName ?? "");
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState(null);
@@ -165,6 +166,8 @@ export default function AddProduct() {
           name: r.name,
           url: r.url,
           current_price: r.price,
+          was_price: r.was_price ?? null,
+          on_special: r.on_special ?? false,
           cup_price: r.cup_price ?? null,
           cup_label: r.cup_label ?? null,
           package_size: r.package_size ?? null,
@@ -196,6 +199,8 @@ export default function AddProduct() {
         name: confirmName,
         url: picked.url,
         current_price: picked.price,
+        was_price: picked.was_price ?? null,
+        on_special: picked.on_special ?? false,
         cup_price: picked.cup_price ?? null,
         cup_label: picked.cup_label ?? null,
         package_size: picked.package_size ?? null,
@@ -217,7 +222,7 @@ export default function AddProduct() {
           <button onClick={() => { setPicked(null); setSaveError(null); }} className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-xl font-bold">Confirm product</h1>
+          <h1 className="page-header text-xl">Confirm product</h1>
         </div>
 
         {saveError && (
@@ -285,7 +290,7 @@ export default function AddProduct() {
         <button onClick={() => navigate(`/items/${itemId}`)} className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
           <ArrowLeft size={20} />
         </button>
-        <h1 className="text-xl font-bold">Add Products</h1>
+        <h1 className="page-header text-xl">Add Products</h1>
       </div>
 
       {saveError && (

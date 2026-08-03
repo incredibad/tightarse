@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Routes, Route, NavLink } from "react-router-dom";
-import { List, Settings, Map, Loader2, CircleDollarSign, X, TriangleAlert, CheckSquare } from "lucide-react";
+import { Routes, Route, NavLink, useLocation } from "react-router-dom";
+import { List, Settings, Map, Loader2, X, TriangleAlert, CheckSquare } from "lucide-react";
 import { api, clearToken, setUser, getUser } from "./api";
 import Setup from "./pages/Setup";
 import Login from "./pages/Login";
@@ -69,15 +69,16 @@ const SETUP   = "setup";
 const LOGIN   = "login";
 const APP     = "app";
 
-function NavItem({ to, icon: Icon, label }) {
+function NavItem({ to, icon: Icon, label, active }) {
   return (
     <NavLink
       to={to}
-      className={({ isActive }) =>
-        `flex flex-col items-center gap-0.5 px-4 py-2 text-xs font-medium transition-colors ${
-          isActive ? "text-brand-600" : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
-        }`
-      }
+      className={({ isActive }) => {
+        const isOn = active !== undefined ? active : isActive;
+        return `flex flex-col items-center gap-0.5 px-4 py-2 text-xs font-medium transition-colors ${
+          isOn ? "text-brand-600" : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+        }`;
+      }}
     >
       <Icon size={20} />
       {label}
@@ -85,9 +86,23 @@ function NavItem({ to, icon: Icon, label }) {
   );
 }
 
+const PAGE_TITLES = {
+  "/": "Shopping List",
+  "/checklist": "Checklist",
+  "/journey": "Journey",
+  "/settings": "Settings",
+};
+
+function getPageTitle(pathname) {
+  if (/^\/items\/[^/]+(\/add-product)?$/.test(pathname)) return "Shopping List";
+  return PAGE_TITLES[pathname];
+}
+
 export default function App() {
   const [gate, setGate] = useState(LOADING);
   const [user, setUserState] = useState(null);
+  const location = useLocation();
+  const pageTitle = getPageTitle(location.pathname);
 
   useEffect(() => {
     // Dark mode: default to dark if no preference stored
@@ -150,9 +165,14 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col">
       <header className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-2">
-          <CircleDollarSign className="text-brand-600 dark:text-brand-500" size={26} />
-          <span className="font-bold text-lg tracking-tight">Tightarse</span>
+        <div className="max-w-2xl mx-auto flex items-stretch">
+          <div className="flex-1 min-w-0 px-4 py-3 flex items-center gap-2">
+            <img src="/logo.png" alt="" className="h-6 w-auto" />
+            <span className="logo-wordmark text-lg">Tightarse</span>
+          </div>
+          <div className="flex-1 min-w-0 px-4 py-3 flex items-center justify-end">
+            {pageTitle && <span className="page-header text-base uppercase tracking-wide truncate">{pageTitle}</span>}
+          </div>
         </div>
       </header>
 
@@ -175,7 +195,7 @@ export default function App() {
       <nav className="fixed bottom-0 w-full bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
         <div className="max-w-2xl mx-auto flex justify-around">
           <NavItem to="/checklist" icon={CheckSquare} label="Checklist" />
-          <NavItem to="/" icon={List} label="List" />
+          <NavItem to="/" icon={List} label="List" active={location.pathname === "/" || location.pathname.startsWith("/items/")} />
           <NavItem to="/journey" icon={Map} label="Journey" />
           <NavItem to="/settings" icon={Settings} label="Settings" />
         </div>

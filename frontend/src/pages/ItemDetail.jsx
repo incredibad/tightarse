@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Plus, ArrowLeft, Clock, Loader2, RefreshCw, MoreVertical, ExternalLink, Trash2 } from "lucide-react";
-import { api } from "../api";
+import { Plus, ArrowLeft, Clock, Loader2, RefreshCw, MoreVertical, ExternalLink, Trash2, Pencil, Check, X } from "lucide-react";
+import { api, isAdmin } from "../api";
 import PriceSparkline from "../components/PriceSparkline";
 import StorePill from "../components/StorePill";
 import { Tooltip, ImageZoom } from "../components/Tooltip";
@@ -39,9 +39,13 @@ export default function ItemDetail() {
   const [item, setItem] = useState(null);
   const [products, setProducts] = useState([]);
   const [histories, setHistories] = useState({});
+  const [storePriority, setStorePriority] = useState({});
   const [loading, setLoading] = useState(true);
   const [rescraping, setRescraping] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState("");
+  const nameInputRef = useRef(null);
   const menuRef = useRef(null);
 
   useEffect(() => { loadData(); }, [itemId]);
@@ -58,12 +62,23 @@ export default function ItemDetail() {
   async function loadData() {
     setLoading(true);
     try {
-      const [itemData, productsData] = await Promise.all([
+      const [itemData, productsData, storesData, settingsData] = await Promise.all([
         api.getItem(Number(itemId)),
         api.getProducts(Number(itemId)),
+        api.getStores(),
+        api.getSettings(),
       ]);
       setItem(itemData);
       setProducts(productsData);
+
+      const priorityMap = Object.fromEntries(storesData.map((s) => [s.id, s.priority ?? 999]));
+      const orderJson = Object.fromEntries(settingsData.map((r) => [r.key, r.value])).store_order;
+      if (orderJson) {
+        try {
+          JSON.parse(orderJson).forEach((id, i) => { priorityMap[id] = i; });
+        } catch {}
+      }
+      setStorePriority(priorityMap);
       const historyMap = {};
       await Promise.all(productsData.map(async (p) => {
         historyMap[p.id] = await api.getProductHistory(p.id);
@@ -72,6 +87,24 @@ export default function ItemDetail() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function startEditingName() {
+    setNameInput(item.name);
+    setEditingName(true);
+    setTimeout(() => nameInputRef.current?.select(), 0);
+  }
+
+  async function saveItemName() {
+    const name = nameInput.trim();
+    if (!name || name === item.name) { setEditingName(false); return; }
+    await api.updateItem(Number(itemId), { name });
+    setItem((prev) => ({ ...prev, name }));
+    setEditingName(false);
+  }
+
+  function cancelEditingName() {
+    setEditingName(false);
   }
 
   async function handleDeleteItem() {
@@ -129,10 +162,11 @@ export default function ItemDetail() {
     if (ka !== kb) return ka - kb;
     const ca = _comparablePrice(a);
     const cb = _comparablePrice(b);
-    if (ca == null && cb == null) return 0;
+    if (ca == null && cb == null) return (storePriority[a.store_id] ?? 999) - (storePriority[b.store_id] ?? 999);
     if (ca == null) return 1;
     if (cb == null) return -1;
-    return ca - cb;
+    if (ca !== cb) return ca - cb;
+    return (storePriority[a.store_id] ?? 999) - (storePriority[b.store_id] ?? 999);
   });
 
   return (
@@ -141,17 +175,38 @@ export default function ItemDetail() {
         <button onClick={() => navigate("/")} className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
           <ArrowLeft size={20} />
         </button>
-        <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-bold truncate">{item.name}</h1>
+        <div className="flex-1 min-w-0 flex items-center gap-1.5">
+          {editingName ? (
+            <>
+              <input
+                ref={nameInputRef}
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") saveItemName(); if (e.key === "Escape") cancelEditingName(); }}
+                className="page-header flex-1 min-w-0 text-xl bg-transparent border-b-2 border-brand-500 focus:outline-none text-gray-900 dark:text-white"
+              />
+              <button onClick={saveItemName} className="text-brand-600 hover:text-brand-700 shrink-0"><Check size={18} /></button>
+              <button onClick={cancelEditingName} className="text-gray-400 hover:text-gray-600 shrink-0"><X size={16} /></button>
+            </>
+          ) : (
+            <>
+              <h1 className="page-header text-xl truncate">{item.name}</h1>
+              <button onClick={startEditingName} className="text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 transition-colors shrink-0" title="Rename">
+                <Pencil size={14} />
+              </button>
+            </>
+          )}
         </div>
-        <button
-          onClick={handleRescrape}
-          disabled={rescraping}
-          className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 disabled:opacity-50 transition-colors shrink-0"
-          title="Refresh prices"
-        >
-          <RefreshCw size={18} className={rescraping ? "animate-spin" : ""} />
-        </button>
+        {isAdmin() && (
+          <button
+            onClick={handleRescrape}
+            disabled={rescraping}
+            className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 disabled:opacity-50 transition-colors shrink-0"
+            title="Refresh prices"
+          >
+            <RefreshCw size={18} className={rescraping ? "animate-spin" : ""} />
+          </button>
+        )}
         <button
           onClick={handleDeleteItem}
           className="text-gray-400 dark:text-gray-500 hover:text-red-400 transition-colors shrink-0"

@@ -1,15 +1,37 @@
 import re
 import httpx
 from bs4 import BeautifulSoup
+from curl_cffi.requests import AsyncSession
 from .base import BaseScraper, ScrapeResult, infer_cup_price
+
+_IMPERSONATE = "chrome124"
 
 
 class ALDIScraper(BaseScraper):
+    # Deliberately doesn't extract on_special/was_price: ALDI's grocery pricing
+    # doesn't do per-item "was $X now $Y" discounts like Woolworths/Coles/Drakes.
+    # Their discount mechanism is the rotating weekly Special Buys catalogue,
+    # which is unrelated to the branded/own-brand groceries this app tracks.
     store_name = "ALDI"
 
+    def __init__(self, proxy_url: str = ""):
+        proxy_kwargs = {"proxies": {"https://": proxy_url, "http://": proxy_url}} if proxy_url else {}
+        self._session = AsyncSession(impersonate=_IMPERSONATE, **proxy_kwargs)
+
+    async def close(self):
+        await self._session.close()
+
+    def _raise_for_status(self, response, url: str):
+        if response.status_code >= 400:
+            raise httpx.HTTPStatusError(
+                f"{response.status_code}",
+                request=httpx.Request("GET", url),
+                response=httpx.Response(response.status_code),
+            )
+
     async def scrape_url(self, url: str) -> ScrapeResult:
-        response = await self.client.get(url)
-        response.raise_for_status()
+        response = await self._session.get(url)
+        self._raise_for_status(response, url)
         soup = BeautifulSoup(response.text, "html.parser")
 
         name = _extract_name(soup)
@@ -38,8 +60,8 @@ class ALDIScraper(BaseScraper):
     async def search(self, query: str) -> list[dict]:
         url = "https://www.aldi.com.au/results"
         params = {"q": query}
-        response = await self.client.get(url, params=params)
-        response.raise_for_status()
+        response = await self._session.get(url, params=params)
+        self._raise_for_status(response, url)
         soup = BeautifulSoup(response.text, "html.parser")
 
         headline = soup.select_one(".product-listing-viewer__headline")

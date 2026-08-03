@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown, ChevronUp, Loader2, ShoppingBag, RotateCcw, Square, CheckSquare, Trash2, ShoppingCart, Eye, EyeOff } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2, ShoppingBag, RotateCcw, Square, CheckSquare, Trash2, ListPlus, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import ConfirmModal from "../components/ConfirmModal";
@@ -106,7 +106,7 @@ export default function Journey() {
     try {
       const newItem = await api.createItem({ name: item.name });
       removeChecklistItem(item.id);
-      navigate(`/items/${newItem.id}/add-product`);
+      navigate(`/items/${newItem.id}/add-product`, { state: { itemName: newItem.name } });
     } finally {
       setChecklistTracking(null);
     }
@@ -155,9 +155,12 @@ export default function Journey() {
           onCancel={() => setTrackConfirm(null)}
         />
       )}
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Shopping Journey</h1>
-        <div className="flex items-center gap-2">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 shadow-sm flex items-center justify-between gap-2">
+        <div className="flex items-baseline gap-1.5 min-w-0">
+          <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">Estimated total</p>
+          <p className="text-xs font-bold text-gray-900 dark:text-white">${journey.estimated_total.toFixed(2)}</p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
           {checkedItems.size > 0 && (
             <button
               onClick={resetJourney}
@@ -178,13 +181,6 @@ export default function Journey() {
             {showChecklist ? <EyeOff size={13} /> : <Eye size={13} />}
             Checklist
           </button>
-        </div>
-      </div>
-
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2.5 shadow-sm flex justify-between items-center">
-        <div>
-          <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">Estimated total</p>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">${journey.estimated_total.toFixed(2)}</p>
         </div>
       </div>
 
@@ -254,7 +250,7 @@ export default function Journey() {
                         </span>
                       )}
                       <button onClick={() => setTrackConfirm(item)} disabled={checklistTracking === item.id} title="Track on Shopping List" className="shrink-0 text-gray-400 hover:text-brand-500 active:opacity-70 transition-colors disabled:opacity-40">
-                        <ShoppingCart size={16} />
+                        <ListPlus size={16} />
                       </button>
                       <button onClick={() => removeChecklistItem(item.id)} className="shrink-0 text-gray-400 hover:text-red-500 active:opacity-70 transition-colors">
                         <Trash2 size={16} />
@@ -307,14 +303,16 @@ export default function Journey() {
         >
           <button
             onClick={() => toggleStore(store.store_id)}
-            className="w-full flex items-center justify-between px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 active:opacity-70 transition-opacity"
+            className="w-full flex divide-x divide-gray-200 dark:divide-gray-600 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 active:opacity-70 transition-opacity"
           >
-            <div className="flex items-center gap-2">
-              <StorePill name={store.store_name} long />
-              {isCollapsed && <span className="text-xs text-gray-400">{store.items.length} item{store.items.length !== 1 ? "s" : ""}</span>}
-            </div>
-            <div className="flex items-center gap-2">
+            <div className="flex-1 min-w-0 flex items-center justify-between pl-3 pr-2 py-2.5">
+              <div className="flex items-center gap-2">
+                <StorePill name={store.store_name} long />
+                {isCollapsed && <span className="text-xs text-gray-400">{store.items.length} item{store.items.length !== 1 ? "s" : ""}</span>}
+              </div>
               <p className="font-bold text-gray-900 dark:text-white">${store.subtotal.toFixed(2)}</p>
+            </div>
+            <div className="w-10 shrink-0 flex items-center justify-center">
               {isCollapsed ? <ChevronDown size={14} className="text-gray-400 shrink-0" /> : <ChevronUp size={14} className="text-gray-400 shrink-0" />}
             </div>
           </button>
