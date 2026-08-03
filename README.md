@@ -32,6 +32,8 @@ A self-hosted grocery price tracker and shopping assistant. Add items to your li
 - **Price history** — Full chart and table of every recorded price per product, accessible from the product ⋮ menu
 - **Out of stock tracking** — Products are marked out of stock when no longer available; the item's cheapest in-stock alternative is used instead
 - **Scheduled scraping** — Prices are automatically refreshed on a configurable schedule: every 6h, 12h, daily at a set time, every 2 days, or weekly on a chosen day
+- **Manual rescan (admin only)** — Admins can trigger an on-demand rescrape of a single item or every product, right from the Shopping List and item detail pages
+- **Image zoom** — Tap a product image for a full-screen preview with native pinch-to-zoom on mobile, or hover/click for an enlarged popup on desktop
 - **Per-user lists** — Each user has their own independent shopping list
 
 ### Journey
@@ -76,6 +78,7 @@ A self-hosted grocery price tracker and shopping assistant. Add items to your li
 ```yaml
 services:
   app:
+    container_name: tightarse
     image: incredibad/tightarse:latest
     restart: unless-stopped
     ports:
@@ -84,6 +87,12 @@ services:
       - tightarse_data:/data
     environment:
       - TZ=Australia/Brisbane   # set your local timezone
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7382/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 15s
 
 volumes:
   tightarse_data:
@@ -114,18 +123,26 @@ Add gluetun to your `docker-compose.yml`:
 ```yaml
 services:
   gluetun:
+    container_name: tightarse-gluetun
     image: qmcgaw/gluetun
     cap_add:
       - NET_ADMIN
+    env_file:
+      - .env   # OPENVPN_USER / OPENVPN_PASSWORD
     environment:
       - VPN_SERVICE_PROVIDER=privado   # or any gluetun-supported provider
-      - OPENVPN_USER=${OPENVPN_USER}
-      - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
       - SERVER_COUNTRIES=Australia
       - HTTPPROXY=on
     ports:
       - "8888:8888"
     restart: unless-stopped
+```
+
+Create a `.env` file next to your `docker-compose.yml` with your VPN credentials:
+
+```
+OPENVPN_USER=your-vpn-username
+OPENVPN_PASSWORD=your-vpn-password
 ```
 
 Then in Tightarse Settings → Admin → VPN, set the **Proxy URL** to `http://your-server:8888` and optionally enable **Route all scraping through VPN**.
