@@ -76,15 +76,14 @@ export default function Settings({ onLogout, user }) {
 
   return (
     <div className="p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Settings</h1>
+      <div className="flex items-center justify-end">
         <a
           href="https://github.com/incredibad/tightarse"
           target="_blank"
           rel="noopener noreferrer"
           className="text-xs text-gray-400 hover:text-brand-500 transition-colors font-mono"
         >
-          v0.5.14
+          v0.5.48
         </a>
       </div>
 
@@ -133,6 +132,9 @@ function NotificationsTab({ settings, set, save, saving, saveMsg }) {
   return (
     <div className="space-y-4">
       <Section title="Price Alerts">
+        <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+          You'll be notified when a tracked product's price drops by at least the threshold below, compared to the last recorded price. Alerts fire during scheduled scrapes — enable at least one channel below to receive them.
+        </p>
         <Field label="Alert threshold (% drop)">
           <input
             type="number" min="1" max="100"
@@ -365,7 +367,7 @@ function StoresTab() {
   return (
     <div className="space-y-4">
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400">Store Preferences</h2>
+        <h2 className="section-header">Store Preferences</h2>
         <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
           Enable or disable stores for your shopping list and journey.
           Use the arrows to set priority order — when two products cost the same,
@@ -525,7 +527,7 @@ function ScrapeHistoryModal({ onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4" onClick={onClose}>
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg p-5 space-y-4 max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-gray-900 dark:text-white">Scrape history</h2>
+          <h2 className="modal-header">Scrape history</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><X size={18} /></button>
         </div>
         {history === null ? (
@@ -856,7 +858,7 @@ function AddUserModal({ onClose, onCreated }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4" onClick={onClose}>
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-sm p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-gray-900 dark:text-white">Add user</h2>
+          <h2 className="modal-header">Add user</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><X size={18} /></button>
         </div>
         <form onSubmit={submit} className="space-y-3">
@@ -923,6 +925,9 @@ function AdminUsersTab() {
             <div key={u.id} className="flex items-center gap-2 py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-0">
               <User size={14} className="text-gray-400 shrink-0" />
               <span className="flex-1 text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{u.username}</span>
+              <span className="text-xs text-gray-400 shrink-0 hidden sm:block" title={u.last_active_at ? new Date(u.last_active_at + "Z").toLocaleString() : (u.last_login_at ? new Date(u.last_login_at + "Z").toLocaleString() : "Never")}>
+                {u.last_active_at ? `Seen ${timeAgo(u.last_active_at + "Z")}` : u.last_login_at ? `Logged in ${timeAgo(u.last_login_at + "Z")}` : "Never seen"}
+              </span>
               <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${u.role === "admin" ? "bg-brand-100 text-brand-700 dark:bg-brand-900 dark:text-brand-300" : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"}`}>
                 {u.role}
               </span>
@@ -1065,7 +1070,7 @@ function TestEmailModal({ onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4" onClick={onClose}>
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-sm p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-gray-900 dark:text-white">Send test email</h2>
+          <h2 className="modal-header">Send test email</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><X size={18} /></button>
         </div>
         {status === "ok" ? (
@@ -1122,7 +1127,7 @@ function Section({ title, description, action, children }) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400">{title}</h2>
+        <h2 className="section-header">{title}</h2>
         {action}
       </div>
       {description && <p className="text-xs text-gray-500 dark:text-gray-400">{description}</p>}
