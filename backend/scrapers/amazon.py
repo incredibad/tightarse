@@ -1,17 +1,18 @@
+import asyncio
 import re
+import httpx
 from bs4 import BeautifulSoup
 from .base import BaseScraper, ScrapeResult
+
+_UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/124.0.0.0 Safari/537.36"
+)
 
 _HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
     "Accept-Language": "en-AU,en;q=0.9",
-    "Accept-Encoding": "gzip, deflate, br",
-    "DNT": "1",
-    "Upgrade-Insecure-Requests": "1",
-    "Sec-Fetch-Dest": "document",
-    "Sec-Fetch-Mode": "navigate",
-    "Sec-Fetch-Site": "none",
-    "Cache-Control": "max-age=0",
 }
 
 _PROXY_REQUIRED = (
@@ -19,19 +20,73 @@ _PROXY_REQUIRED = (
     "Configure a Proxy URL in Settings → VPN."
 )
 
+# Signatures of Amazon's bot-check / CAPTCHA interstitials — served with HTTP 200,
+# so they can't be detected via status code alone.
+_BLOCK_SIGNALS = (
+    "validateCaptcha",
+    "Enter the characters you see below",
+    "Sorry, we just need to make sure you",
+    'Server Busy</title>',
+)
+
+_STATUS_MARKER = "__TIGHTARSE_HTTP_STATUS__:"
+
+
+class AmazonBlockedError(Exception):
+    """Raised when Amazon serves a bot-check page instead of the real product page."""
+
+
+def _looks_blocked(html: str) -> bool:
+    return any(sig in html for sig in _BLOCK_SIGNALS)
+
+
+async def _curl_get(url: str, proxy_url: str = "") -> tuple[int, str]:
+    """Fetch a page via curl rather than httpx.
+
+    Amazon's Akamai bot-check fingerprints the TLS/HTTP client itself — it blocks
+    httpx (and other Python HTTP libraries) with a CAPTCHA page even when the exact
+    same request via curl, over the same connection, succeeds. This mirrors the
+    same workaround coles.py already uses for its buildId fetch.
+    """
+    cmd = ["curl", "-sL", "--compressed", "-w", f"\n{_STATUS_MARKER}%{{http_code}}"]
+    if proxy_url:
+        cmd += ["-x", proxy_url]
+    cmd += ["-H", f"User-Agent: {_UA}"]
+    for key, value in _HEADERS.items():
+        cmd += ["-H", f"{key}: {value}"]
+    cmd.append(url)
+    proc = await asyncio.create_subprocess_exec(
+        *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL,
+    )
+    stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=25)
+    text = stdout.decode("utf-8", errors="replace")
+    marker_idx = text.rfind(f"\n{_STATUS_MARKER}")
+    if marker_idx == -1:
+        raise ValueError(f"curl fetch of {url} did not return a status code")
+    status_code = int(text[marker_idx + len(f"\n{_STATUS_MARKER}"):].strip())
+    return status_code, text[:marker_idx]
+
 
 class AmazonScraper(BaseScraper):
     store_name = "Amazon Australia"
 
-    def __init__(self, proxy_url: str = ""):
-        if not proxy_url:
+    def __init__(self, proxy_url: str = "", require_proxy: bool = True):
+        if require_proxy and not proxy_url:
             raise ValueError(_PROXY_REQUIRED)
+        self._proxy_url = proxy_url
         super().__init__(proxy_url=proxy_url)
 
     async def scrape_url(self, url: str) -> ScrapeResult:
-        r = await self.client.get(url, headers=_HEADERS)
-        r.raise_for_status()
-        soup = BeautifulSoup(r.text, "lxml")
+        status_code, html = await _curl_get(url, self._proxy_url)
+        if status_code >= 400:
+            req = httpx.Request("GET", url)
+            raise httpx.HTTPStatusError(
+                f"{status_code} error for {url}", request=req,
+                response=httpx.Response(status_code, request=req),
+            )
+        if _looks_blocked(html):
+            raise AmazonBlockedError(f"Amazon served a bot-check page for {url}")
+        soup = BeautifulSoup(html, "lxml")
 
         name_el = soup.select_one("#productTitle")
         name = name_el.get_text(strip=True) if name_el else "Unknown product"

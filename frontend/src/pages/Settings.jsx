@@ -83,7 +83,7 @@ export default function Settings({ onLogout, user }) {
           rel="noopener noreferrer"
           className="text-xs text-gray-400 hover:text-brand-500 transition-colors font-mono"
         >
-          v0.5.50
+          v0.5.51
         </a>
       </div>
 
@@ -747,8 +747,14 @@ function AdminNetworkTab({ settings, set, save, saving, saveMsg }) {
           value={settings.scrape_via_vpn === "true"}
           onChange={(v) => set("scrape_via_vpn", v ? "true" : "false")}
         />
+        <Toggle
+          label="Fall back to home IP if Amazon blocks the proxy"
+          description="If Amazon serves a bot-check page over the VPN, retry that one request directly instead of failing. Only used for Amazon, and only when it's already been blocked via the proxy."
+          value={settings.amazon_direct_fallback === "true"}
+          onChange={(v) => set("amazon_direct_fallback", v ? "true" : "false")}
+        />
         <div className="flex items-center gap-3 flex-wrap">
-          <SaveBar keys={["vpn_proxy_url", "scrape_via_vpn"]} save={save} saving={saving} msg={saveMsg} />
+          <SaveBar keys={["vpn_proxy_url", "scrape_via_vpn", "amazon_direct_fallback"]} save={save} saving={saving} msg={saveMsg} />
           <button onClick={testProxy} disabled={proxyTesting || !settings.vpn_proxy_url} className={btnCls}>
             {proxyTesting ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
             Check now
@@ -1145,17 +1151,20 @@ function Field({ label, children }) {
   );
 }
 
-function Toggle({ label, value, onChange }) {
+function Toggle({ label, description, value, onChange }) {
   return (
-    <div className="flex items-center justify-between py-0.5">
-      <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
-      <button
-        type="button"
-        onClick={() => onChange(!value)}
-        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${value ? "bg-brand-500" : "bg-gray-300 dark:bg-gray-600"}`}
-      >
-        <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${value ? "translate-x-4" : "translate-x-0.5"}`} />
-      </button>
+    <div className="py-0.5">
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
+        <button
+          type="button"
+          onClick={() => onChange(!value)}
+          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors shrink-0 ${value ? "bg-brand-500" : "bg-gray-300 dark:bg-gray-600"}`}
+        >
+          <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${value ? "translate-x-4" : "translate-x-0.5"}`} />
+        </button>
+      </div>
+      {description && <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 pr-12">{description}</p>}
     </div>
   );
 }
