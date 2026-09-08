@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from database import SessionLocal, Product, Store, Item, PriceHistory, Notification, Setting, get_user_setting, get_global_setting, record_vpn_ip, record_scrape_run
 from scrapers import get_scraper
+from scrapers.amazon import AmazonScraper, AmazonBlockedError
 from notifications import send_price_drop_notification
 
 logger = logging.getLogger(__name__)
@@ -17,6 +18,29 @@ logger = logging.getLogger(__name__)
 scheduler = AsyncIOScheduler()
 
 _SCRAPE_SEM = asyncio.Semaphore(6)  # max concurrent URL scrapes across scheduler + manual triggers
+
+
+async def _run_scraper(scraper, scraper_module: str, url: str):
+    """Run scraper.scrape_url(url), falling back to a direct (no-proxy) Amazon
+    request if the proxied request got blocked and the fallback setting is on."""
+    try:
+        return await scraper.scrape_url(url)
+    except AmazonBlockedError:
+        if scraper_module != "amazon":
+            raise
+        db = SessionLocal()
+        try:
+            fallback_enabled = get_global_setting(db, "amazon_direct_fallback") == "true"
+        finally:
+            db.close()
+        if not fallback_enabled:
+            raise
+        logger.warning(f"Amazon blocked via proxy for {url} — retrying direct (home IP)")
+        direct_scraper = AmazonScraper(proxy_url="", require_proxy=False)
+        try:
+            return await direct_scraper.scrape_url(url)
+        finally:
+            await direct_scraper.close()
 
 
 async def scrape_product(product_id: int) -> bool:
@@ -48,7 +72,7 @@ async def _scrape_product_inner(product_id: int) -> bool:
         logger.warning(f"Cannot scrape [{store_name}] [{product_name}] {url}: {e}")
         return False
     try:
-        result = await scraper.scrape_url(url)
+        result = await _run_scraper(scraper, scraper_module, url)
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 404:
             logger.warning(f"[{store_name}] [{product_name}] {url} 404 — marking out of stock")
@@ -134,7 +158,7 @@ async def _scrape_url_group(url: str, product_ids: list[int], store_id: str | No
             logger.warning(f"[{store_name}] [{product_names}] {url} cannot scrape: {e}")
             return 0, len(product_ids)
         try:
-            result = await scraper.scrape_url(url)
+            result = await _run_scraper(scraper, scraper_module, url)
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
                 logger.warning(f"[{store_name}] [{product_names}] {url} 404 — marking out of stock")

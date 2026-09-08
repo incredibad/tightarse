@@ -334,6 +334,7 @@ def _seed_default_settings():
         "email_from": "",
         "vpn_proxy_url": "",
         "scrape_via_vpn": "false",
+        "amazon_direct_fallback": "false",
     }
     try:
         for key, value in global_defaults.items():
@@ -373,6 +374,7 @@ GLOBAL_SETTING_KEYS = {
     "drakes_store_map",
     "vpn_proxy_url",
     "scrape_via_vpn",
+    "amazon_direct_fallback",
 }
 
 
@@ -414,5 +416,6 @@ def get_global_setting(db, key: str) -> str:
     defaults = {
         "vpn_proxy_url": "",
         "scrape_via_vpn": "false",
+        "amazon_direct_fallback": "false",
     }
     return defaults.get(key, "")
